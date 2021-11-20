@@ -4,3 +4,6 @@
 [submodule "libcreate"]
 	path = libcreate
 	url = https://github.com/AutonomyLab/libcreate
+[submodule "slam_toolbox"]
+	path = slam_toolbox
+	url = https://github.com/SteveMacenski/slam_toolbox
