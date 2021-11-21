@@ -36,6 +36,11 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+  PATTERN ".svn" EXCLUDE
+)
+
 ament_target_dependencies(system_controller_node rclcpp std_msgs create_msgs geometry_msgs owen_common rclcpp_lifecycle)
 
 ament_package()
