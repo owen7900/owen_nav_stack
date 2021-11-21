@@ -32,6 +32,10 @@ public:
     {
         return this->_data;
     };
+    inline void Reset()
+    {
+        this->_lastTime = rclcpp::Time(0.0);
+    }
 
 private:
     T _data;
