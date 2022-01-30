@@ -1,0 +1,5 @@
+<library path="expand_to_goal_costmap_plugin">
+<class name="expand_to_goal_costmap_plugin::ExpandToGoal" type="expand_to_goal_costmap_plugin::ExpandToGoal" base_class_type="nav2_costmap_2d::Layer">
+    <description>This is plugin that will expand the costmap to include the goal</description>
+  </class>
+</library>

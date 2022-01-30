@@ -1,0 +1,12 @@
+Costmap plugins:
+    Obstacle Layer
+    Inflation Layer
+Controller:
+    DWB Controller TODO Find critics
+
+Planner:
+    SmacPlannerHybrid
+
+
+
+
