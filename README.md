@@ -5,6 +5,9 @@ Over time, I plan to re-implement most 3rd party nodes and systems myself as pro
 
 This now works with slam
 
+TODO
+- Add Udev rules to roomba pi
+
 On PC
 `ros2 launch slam_toolbox online_async_launch.py`
 `rviz2`
