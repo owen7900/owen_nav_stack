@@ -6,6 +6,10 @@ Over time, I plan to re-implement most 3rd party nodes and systems myself as pro
 This now works with slam
 
 TODO
+- Add self-docking feature
+- configure system to run at launch
+
+DONE
 - Add Udev rules to roomba pi
 
 On PC
