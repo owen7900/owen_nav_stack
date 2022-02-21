@@ -1,7 +1,7 @@
-#include <create_msgs/msg/detail/cliff__struct.hpp>
 #include "owen_common/timestamp.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "create_msgs/msg/bumper.hpp"
+#include "create_msgs/msg/cliff.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 struct RobotStatus
