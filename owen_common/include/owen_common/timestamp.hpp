@@ -8,39 +8,38 @@
 
 namespace owen_common
 {
-
-template<typename T>
+template <typename T>
 class Timestamp
 {
 public:
-    Timestamp() : _timeout(rclcpp::Duration::from_seconds(0.0)){};
+  Timestamp() : _timeout(rclcpp::Duration::from_seconds(0.0)){};
 
-    inline void SetTimeout(rclcpp::Duration timeout)
-    {
-        this->_timeout = timeout;
-    };
-    inline void SetData(T data)
-    {
-        this->_data = data;
-        this->_lastTime = rclcpp::Clock().now();
-    };
-    inline bool IsDataTimeout() const
-    {
-        return (rclcpp::Clock().now() - this->_lastTime) > this->_timeout;
-    };
-    inline T GetData() const
-    {
-        return this->_data;
-    };
-    inline void Reset()
-    {
-        this->_lastTime = rclcpp::Time(0.0);
-    }
+  inline void SetTimeout(rclcpp::Duration timeout)
+  {
+    this->_timeout = timeout;
+  };
+  inline void SetData(T data)
+  {
+    this->_data = data;
+    this->_lastTime = rclcpp::Clock().now();
+  };
+  inline bool IsDataTimeout() const
+  {
+    return (rclcpp::Clock().now() - this->_lastTime) > this->_timeout;
+  };
+  inline T GetData() const
+  {
+    return this->_data;
+  };
+  inline void Reset()
+  {
+    this->_lastTime = rclcpp::Time(0.0);
+  }
 
 private:
-    T _data;
-    rclcpp::Duration _timeout;
-    rclcpp::Time _lastTime;
+  T _data;
+  rclcpp::Duration _timeout;
+  rclcpp::Time _lastTime;
 };
 
 }  // namespace owen_common

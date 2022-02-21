@@ -2,7 +2,6 @@
 
 namespace owen_common
 {
-
 OwenCommon::OwenCommon()
 {
 }

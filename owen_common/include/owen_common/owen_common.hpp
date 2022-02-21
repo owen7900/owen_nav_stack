@@ -5,7 +5,6 @@
 
 namespace owen_common
 {
-
 class OwenCommon
 {
 public:
