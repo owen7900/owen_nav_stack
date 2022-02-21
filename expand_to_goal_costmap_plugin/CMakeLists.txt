@@ -11,9 +11,56 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(laser_geometry REQUIRED)
+find_package(map_msgs REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(nav2_common REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util)
+find_package(nav2_voxel_grid REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(rmw REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(angles REQUIRED)
 
-add_library(expand_to_goal_costmap_plugin src/expand_to_goal_costmap_plugin.cpp)
-target_compile_features(expand_to_goal_costmap_plugin PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+set(dependencies
+  geometry_msgs
+  laser_geometry
+  map_msgs
+  message_filters
+  nav2_msgs
+  nav2_util
+  nav2_voxel_grid
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+  tf2_sensor_msgs
+  visualization_msgs
+  angles
+  nav2_costmap_2d
+)
+
+add_library(expand_to_goal_costmap_plugin SHARED
+    src/expand_to_goal_costmap_plugin.cpp)
+
+target_compile_features(expand_to_goal_costmap_plugin PUBLIC c_std_99 cxx_std_17) 
+
 target_include_directories(expand_to_goal_costmap_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -24,6 +71,13 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+ament_target_dependencies(expand_to_goal_costmap_plugin 
+    ${dependencies}
+)
+
+#target_link_libraries(expand_to_goal_costmap_plugin
+    #nav2_costmap_2d_core
+  #)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(expand_to_goal_costmap_plugin PRIVATE "EXPAND_TO_GOAL_COSTMAP_PLUGIN_BUILDING_LIBRARY")
