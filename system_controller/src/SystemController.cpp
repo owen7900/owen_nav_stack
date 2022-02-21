@@ -1,6 +1,8 @@
 
 #include "system_controller/SystemController.hpp"
 #include <algorithm>
+#include <create_msgs/msg/detail/bumper__struct.hpp>
+#include <create_msgs/msg/detail/cliff__struct.hpp>
 
 constexpr double WarningSpeed = 0.05;
 constexpr uint16_t WarningIntensity = 100;
@@ -17,6 +19,9 @@ SystemController::SystemController(const std::string& name) : rclcpp::Node(name)
   this->_bumperSub = this->create_subscription<create_msgs::msg::Bumper>(
       "/roomba/bumper", 10, std::bind(&SystemController::bumperCallback, this, _1));
 
+  this->_cliffSub = this->create_subscription<create_msgs::msg::Cliff>(
+      "/roomba/cliff", 10, std::bind(&SystemController::cliffCallback, this, _1));
+
   this->declare_parameter("status_timeout", 1.0);
   double statusTimeout;
   this->get_parameter("status_timeout", statusTimeout);
@@ -31,6 +36,13 @@ void SystemController::bumperCallback(const create_msgs::msg::Bumper::ConstShare
   this->_status.SetData(status);
 }
 
+void SystemController::cliffCallback(const create_msgs::msg::Cliff::ConstSharedPtr msg)
+{
+    auto status = this->_status.GetData();
+    status.cliff = *msg;
+    this->_status.SetData(status);
+}
+
 bool isWarningZone(const RobotStatus& status)
 {
   const auto& bumper = status.bumper;
@@ -38,6 +50,14 @@ bool isWarningZone(const RobotStatus& status)
   return bumper.light_signal_center_left > WarningIntensity || bumper.light_signal_front_left > WarningIntensity ||
          bumper.light_signal_left > WarningIntensity || bumper.light_signal_center_right > WarningIntensity ||
          bumper.light_signal_front_right > WarningIntensity || bumper.light_signal_right > WarningIntensity;
+}
+
+bool isStopCondition(const RobotStatus& status)
+{
+    const auto& bumper = status.bumper;
+    const auto& cliff = status.cliff;
+
+    return bumper.is_left_pressed || bumper.is_right_pressed || cliff.is_cliff_left || cliff.is_cliff_right || cliff.is_cliff_front_left || cliff.is_cliff_front_right;
 }
 
 void SystemController::cmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr msg)
@@ -53,7 +73,7 @@ void SystemController::cmdVelCallback(const geometry_msgs::msg::Twist::ConstShar
   toSend->angular.z = msg->angular.z;
   const auto status = this->_status.GetData();
 
-  if (status.bumper.is_left_pressed || status.bumper.is_right_pressed)
+  if (isStopCondition(status))
   {
     toSend->linear.x = std::min(0.0, msg->linear.x);
     this->_cmdVelPub->publish(std::move(toSend));
