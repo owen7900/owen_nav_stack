@@ -13,7 +13,7 @@ DONE
 - Add Udev rules to roomba pi
 
 On PC
-`ros2 launch slam_toolbox online_async_launch.py`
+`ros2 launch slam_toolbox online_sync_launch.py`
 `rviz2`
 
 On Robot
