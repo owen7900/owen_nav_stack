@@ -1,8 +1,5 @@
-
 #include "system_controller/SystemController.hpp"
 #include <algorithm>
-#include <create_msgs/msg/detail/bumper__struct.hpp>
-#include <create_msgs/msg/detail/cliff__struct.hpp>
 
 constexpr double WarningSpeed = 0.05;
 constexpr uint16_t WarningIntensity = 100;
