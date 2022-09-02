@@ -20,7 +20,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
 
     lifecycle_nodes = ['controller_server',
-                       'smoother_server',
+                       # 'smoother_server',
                        'planner_server',
                        'recoveries_server',
                        'bt_navigator',
@@ -74,13 +74,13 @@ def generate_launch_description():
             parameters=[configured_params],
             remappings=remappings),
 
-        Node(
-            package='nav2_smoother',
-            executable='smoother_server',
-            name='smoother_server',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+#        Node(
+#            package='nav2_smoother',
+#            executable='smoother_server',
+#            name='smoother_server',
+#            output='screen',
+#            parameters=[configured_params],
+#            remappings=remappings),
 
         Node(
             package='nav2_planner',

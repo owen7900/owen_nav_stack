@@ -16,6 +16,8 @@ def generate_launch_description():
       get_package_share_directory('create_description'),
       urdf_file_name)
 
+  world = os.path.join(get_package_share_directory('owen_bringup'), 'worlds', 'willowGarage.world')
+
   create_desc = get_package_share_directory('create_description')
   print("urdf_file_name : {}".format(urdf_file_name))
   return LaunchDescription([
@@ -28,7 +30,7 @@ def generate_launch_description():
         SetEnvironmentVariable(name='GAZEBO_MODEL_PATH',value=create_desc+"/../"),
 
         ExecuteProcess(
-            cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_factory.so'],
+            cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_factory.so', '--world', world],
             output='screen'),
 
         Node(
