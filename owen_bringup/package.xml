@@ -14,7 +14,7 @@
   <depend>create_driver</depend>
   <depend>create_bringup</depend>
   <depend>create_msgs</depend>
-  <depend>navigation2</depend>
+  <!-- <depend>navigation2</depend> -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

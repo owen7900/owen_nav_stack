@@ -32,18 +32,18 @@ SystemController::SystemController(const std::string& name) : rclcpp::Node(name)
   this->declare_parameter("manual_timeout", 1.0);
   double manualTimeout;
   this->get_parameter("manual_timeout", manualTimeout);
-  this->_status.SetTimeout(rclcpp::Duration::from_seconds(manualTimeout));
+  this->_manualCmd.SetTimeout(rclcpp::Duration::from_seconds(manualTimeout));
 
   this->declare_parameter("autonomous_timeout", 1.0);
   double autonomousTimeout;
   this->get_parameter("autonomous_timeout", autonomousTimeout);
-  this->_status.SetTimeout(rclcpp::Duration::from_seconds(autonomousTimeout));
+  this->_autonomousCmd.SetTimeout(rclcpp::Duration::from_seconds(autonomousTimeout));
 
   this->declare_parameter("control_period", 0.01);
   double controlPeriod;
   this->get_parameter("control_period", controlPeriod);
-  // this->_timer = 
-  const auto temp = this->create_wall_timer(std::chrono::duration<double>(controlPeriod), std::bind(&SystemController::controlCallback, this));
+  this->_timer = this->create_wall_timer(std::chrono::duration<double>(controlPeriod),
+                                            std::bind(&SystemController::controlCallback, this));
 }
 
 void SystemController::bumperCallback(const create_msgs::msg::Bumper::ConstSharedPtr msg)
@@ -55,9 +55,9 @@ void SystemController::bumperCallback(const create_msgs::msg::Bumper::ConstShare
 
 void SystemController::cliffCallback(const create_msgs::msg::Cliff::ConstSharedPtr msg)
 {
-    auto status = this->_status.GetData();
-    status.cliff = *msg;
-    this->_status.SetData(status);
+  auto status = this->_status.GetData();
+  status.cliff = *msg;
+  this->_status.SetData(status);
 }
 
 bool isWarningZone(const RobotStatus& status)
@@ -71,10 +71,11 @@ bool isWarningZone(const RobotStatus& status)
 
 bool isStopCondition(const RobotStatus& status)
 {
-    const auto& bumper = status.bumper;
-    const auto& cliff = status.cliff;
+  const auto& bumper = status.bumper;
+  const auto& cliff = status.cliff;
 
-    return bumper.is_left_pressed || bumper.is_right_pressed || cliff.is_cliff_left || cliff.is_cliff_right || cliff.is_cliff_front_left || cliff.is_cliff_front_right;
+  return bumper.is_left_pressed || bumper.is_right_pressed || cliff.is_cliff_left || cliff.is_cliff_right ||
+         cliff.is_cliff_front_left || cliff.is_cliff_front_right;
 }
 
 void SystemController::manualCmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr msg)
@@ -89,47 +90,43 @@ void SystemController::cmdVelCallback(const geometry_msgs::msg::Twist::ConstShar
 
 void SystemController::controlCallback()
 {
-  auto toSend = std::make_unique<geometry_msgs::msg::Twist>();
-
-  if (this->_status.IsDataTimeout())
+  if(this->_manualCmd.IsDataTimeout())
   {
-    this->_cmdVelPub->publish(std::move(toSend));
-    return;
-  }
+    auto toSend = std::make_unique<geometry_msgs::msg::Twist>();
 
-  if (!this->_manualCmd.IsDataTimeout())
+    if (this->_autonomousCmd.IsDataTimeout())
+    {
+      this->_cmdVelPub->publish(std::move(toSend));
+      return;
+    }
+
+    const auto msg = this->_autonomousCmd.GetData();
+
+    toSend->angular.z = msg.angular.z;
+    const auto status = this->_status.GetData();
+    if (!this->_status.IsDataTimeout())
+    {
+      if (isStopCondition(status))
+      {
+        toSend->linear.x = std::min(0.0, msg.linear.x);
+        this->_cmdVelPub->publish(std::move(toSend));
+        return;
+      }
+
+      if (isWarningZone(status))
+      {
+        RCLCPP_INFO(this->get_logger(), "WARNING SPEED");
+        toSend->linear.x = std::min(WarningSpeed, msg.linear.x);
+        this->_cmdVelPub->publish(std::move(toSend));
+        return;
+      }
+    }
+
+    toSend->linear.x = msg.linear.x;
+    this->_cmdVelPub->publish(std::move(toSend));
+  }
+  else
   {
     this->_cmdVelPub->publish(this->_manualCmd.GetData());
-    return;
   }
-
-  if (this->_autonomousCmd.IsDataTimeout())
-  {
-    this->_cmdVelPub->publish(std::move(toSend));
-    return;
-  }
-
-  const auto msg = this->_autonomousCmd.GetData();
-
-  toSend->angular.z = msg.angular.z;
-  const auto status = this->_status.GetData();
-
-  if (isStopCondition(status))
-  {
-    toSend->linear.x = std::min(0.0, msg.linear.x);
-    this->_cmdVelPub->publish(std::move(toSend));
-    return;
-  }
-
-  if (isWarningZone(status))
-  {
-    RCLCPP_INFO(this->get_logger(), "WARNING SPEED");
-    toSend->linear.x = std::min(WarningSpeed, msg.linear.x);
-    this->_cmdVelPub->publish(std::move(toSend));
-    return;
-  }
-
-  toSend->linear.x = msg.linear.x;
-  this->_cmdVelPub->publish(std::move(toSend));
 }
-

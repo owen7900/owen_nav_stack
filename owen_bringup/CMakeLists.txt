@@ -29,5 +29,8 @@ install(DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}
   PATTERN ".svn" EXCLUDE
 )
-
+install(DIRECTORY config worlds
+  DESTINATION share/${PROJECT_NAME}
+  PATTERN ".svn" EXCLUDE
+)
 ament_package()

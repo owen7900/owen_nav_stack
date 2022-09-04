@@ -72,7 +72,6 @@ def main(argv = sys.argv[1:]):
         slam_config,
         navigation_launch,
         slam_launch,
-        create_launch,
         system_controller
         ])
 
@@ -81,6 +80,7 @@ def main(argv = sys.argv[1:]):
         ld.add_entity(simulation_launch)
     else:
         ld.add_entity(rplidar_launch)
+        ld.add_entity(create_launch)
 
     if(args.explore):
         print("EPLORING")
