@@ -21,18 +21,23 @@ def main(argv = sys.argv[1:]):
     slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
                                              'config', 'mapper_params_online_async.yaml')
 
-    slam_config =  DeclareLaunchArgument(
+    slam_config = DeclareLaunchArgument(
         'slam_params_file',
         default_value = slam_params_file,
         description = 'launch config for mapper'
     )
 
-    if(not args.simulation):
-        rplidar_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([os.path.join(
-             get_package_share_directory('rplidar_ros2'), 'launch'),
-            '/rplidar_launch.py'])
-        )
+    if not args.simulation:
+        rplidar_node = Node(
+            package='rplidar_ros',
+            executable='rplidar_composition',
+            name='rplidar_composition',
+            output='screen',
+            parameters=[{
+                'frame_id': 'laser',
+                'serial_port': '/dev/lidar',
+                'angle_compensate': True
+            }])
     else:
         simulation_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([os.path.join(
