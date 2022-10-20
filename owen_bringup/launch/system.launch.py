@@ -28,10 +28,16 @@ def main(argv = sys.argv[1:]):
     )
 
     if(not args.simulation):
-        rplidar_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([os.path.join(
-             get_package_share_directory('rplidar_ros2'), 'launch'),
-            '/rplidar_launch.py'])
+        lidar_node = Node(
+        package='rplidar_ros',
+        executable='rplidar_composition',
+        name='lidar_node',
+        output='screen',
+        parameters=[{
+            'serial_port' : '/dev/lidar',
+            'frame_id' : 'laser',
+            'angle_compensate' : True
+        }]
         )
     else:
         simulation_launch = IncludeLaunchDescription(
@@ -79,11 +85,11 @@ def main(argv = sys.argv[1:]):
         print("DOING SIM")
         ld.add_entity(simulation_launch)
     else:
-        ld.add_entity(rplidar_launch)
+        ld.add_action(lidar_node)
         ld.add_entity(create_launch)
 
     if(args.explore):
-        print("EPLORING")
+        print("EXPLORING")
         ld.add_entity(explore_launch)
 
 
