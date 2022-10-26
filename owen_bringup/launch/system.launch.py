@@ -27,17 +27,18 @@ def main(argv = sys.argv[1:]):
         description = 'launch config for mapper'
     )
 
-    if not args.simulation:
-        rplidar_node = Node(
-            package='rplidar_ros',
-            executable='rplidar_composition',
-            name='rplidar_composition',
-            output='screen',
-            parameters=[{
-                'frame_id': 'laser',
-                'serial_port': '/dev/lidar',
-                'angle_compensate': True
-            }])
+    if(not args.simulation):
+        lidar_node = Node(
+        package='rplidar_ros',
+        executable='rplidar_composition',
+        name='lidar_node',
+        output='screen',
+        parameters=[{
+            'serial_port' : '/dev/lidar',
+            'frame_id' : 'laser',
+            'angle_compensate' : True
+        }]
+        )
     else:
         simulation_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([os.path.join(
@@ -84,11 +85,11 @@ def main(argv = sys.argv[1:]):
         print("DOING SIM")
         ld.add_entity(simulation_launch)
     else:
-        ld.add_entity(rplidar_launch)
+        ld.add_action(lidar_node)
         ld.add_entity(create_launch)
 
     if(args.explore):
-        print("EPLORING")
+        print("EXPLORING")
         ld.add_entity(explore_launch)
 
 

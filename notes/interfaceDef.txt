@@ -1,0 +1,8 @@
+GetAvailableDestination Empty-String[] Service - called by UI, provided by Map Labels
+Destination String Topic - Pub by UI, Sub by navigation -- will be validated in UI
+TerrainFeaturesList String[] Topic - pub by nav, sub by ui
+UpcomingTerrainFeature {String(feature), int(time to collision)} Topic pub by nav, sub by ui
+CanContinue Empty-Bool Serice - called by nav, provided by UI
+PushElevatorButton String - pub by nav, sub by UI
+
+

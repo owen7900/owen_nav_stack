@@ -1,0 +1,2 @@
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{interface}=="FT231X USB UART", MODE="666", SYMLINK+="roomba"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB[0-9]*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="666", SYMLINK+="lidar"
