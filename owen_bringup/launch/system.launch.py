@@ -15,11 +15,33 @@ def main(argv = sys.argv[1:]):
     parser = ArgumentParser(description='Launch the owen_nav_stack system')
     parser.add_argument('-s', '--simulation', action='store_true', help='run the stack in simulation', default=False)
     parser.add_argument('-e', '--explore', action='store_true', help='run the stack in explore mode', default=False)
+    parser.add_argument('-l', '--localization', action='store_true', help='run the stack in localization mode, default is mapping mode', default=False)
 
     args, argv = parser.parse_known_args()
 
-    slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
-                                             'config', 'mapper_params_online_async.yaml')
+    if(not args.localization):
+        slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
+                                    'config', 'mapper_params_online_async.yaml')
+        slam_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('slam_toolbox'), 'launch'),
+                    '/online_async_launch.py']),
+        launch_arguments = {'slam_params_file': slam_params_file}.items()
+        )
+
+    else:
+        slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
+                                             'config', 'mapper_params_localization.yaml')
+        slam_launch = Node(
+          parameters=[
+              slam_params_file
+          ],
+          package='slam_toolbox',
+          executable='localization_slam_toolbox_node',
+          name='slam_toolbox',
+          output='screen'
+        ) 
+
 
     slam_config =  DeclareLaunchArgument(
         'slam_params_file',
@@ -60,13 +82,6 @@ def main(argv = sys.argv[1:]):
          get_package_share_directory('create_bringup'), 'launch'),
          '/create_2.launch'])
       )
-    slam_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('slam_toolbox'), 'launch'),
-                    '/online_async_launch.py']),
-        launch_arguments = {'slam_params_file': slam_params_file}.items()
-        )
-
     system_controller = Node(
         package='system_controller',
         executable='system_controller_node',
