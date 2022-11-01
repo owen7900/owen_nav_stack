@@ -1,0 +1,15 @@
+<library path="roomba_rviz_plugins">
+
+    <class name="roomba_rviz_plugins/TerrainLabelling"
+           type="roomba_rviz_plugins::TerrainLabelling"
+           base_class_type="rviz_common::Panel">
+        <description>Labelling panel</description>
+    </class>
+
+    <class name="roomba_rviz_plugins/TerrainLabellingTool"
+           type="roomba_rviz_plugins::TerrainLabellingTool"
+           base_class_type="rviz_common::Tool">
+        <description>Labelling tool</description>
+    </class>
+
+</library>

@@ -2,3 +2,6 @@
 */.*
 **/.*
 owen_bringup/maps/*
+**build**
+**install**
+**log**
