@@ -6,4 +6,7 @@
 	url = https://github.com/AutonomyLab/libcreate
 [submodule "m-explore-ros2"]
 	path = m-explore-ros2
-	url = ssh://git@github.com:owen7900/m-explore-ros2.git
+	url = ssh://git@github.com/owen7900/m-explore-ros2.git
+[submodule "roscpp_code_format"]
+	path = roscpp_code_format
+	url = https://github.com/PickNikRobotics/roscpp_code_format
