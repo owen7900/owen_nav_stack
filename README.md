@@ -8,6 +8,9 @@ This now works with slam
 TODO
 - Add self-docking feature
 - configure system to run at launch
+- figure out why the lidar spits out different numbers of points -- maybe fixed with `angle_compensate` parameter
+- power the pi from the roomba battery
+- implement rtabmap with a depth cam (budget dependant)
 
 DONE
 - Add Udev rules to roomba pi

@@ -43,7 +43,7 @@ def main(argv = sys.argv[1:]):
         ) 
 
 
-    slam_config =  DeclareLaunchArgument(
+    slam_config = DeclareLaunchArgument(
         'slam_params_file',
         default_value = slam_params_file,
         description = 'launch config for mapper'

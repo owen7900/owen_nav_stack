@@ -1,8 +1,17 @@
-GetAvailableDestination Empty-String[] Service - called by UI, provided by Map Labels
-Destination String Topic - Pub by UI, Sub by navigation -- will be validated in UI
-TerrainFeaturesList String[] Topic - pub by nav, sub by ui
+GLOBAL
+CurrentFloor String(floor_id) Topic - pub by nav
+
+UI CENTRIC
+GetAvailableDestination Empty-String[] Service - called by UI, provided by amelia
+DestinationName String Topic - Pub by UI, Sub by amelia -- will be validated in UI
+TerrainFeaturesList String[] Topic - pub by amelia, sub by ui
 UpcomingTerrainFeature {String(feature), int(time to collision)} Topic pub by nav, sub by ui
 CanContinue Empty-Bool Serice - called by nav, provided by UI
 PushElevatorButton String - pub by nav, sub by UI
 
+NAV CENTRIC
+Destination {String(floor_id), Pose} Topic - pub by amelia, sub by nav
+GetPathObstacles Path-{String(feature), {String(floor_id), Rectangle(bounds)}} Serivce - provided by amelia, called by nav
 
+OTHER
+MapPlugin for impassible/passible locations
