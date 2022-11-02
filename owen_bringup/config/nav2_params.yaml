@@ -139,7 +139,11 @@ global_costmap:
       rolling_window: false
       width: 50
       height: 50
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "semantic_map"]
+      semantic_map:
+        plugin: "semantic_map_plugin::SemanticMap"
+        map_subscribe_transient_local: True
+        enabled: True
       expand_goal:
         plugin: "expand_to_goal_costmap_plugin::ExpandToGoal"
         map_subscribe_transient_local: True

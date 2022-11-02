@@ -8,20 +8,26 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(navigation2 REQUIRED)
+find_package(owen_common REQUIRED)
+
+set(dependencies
+        nav2_costmap_2d
+        owen_common
+        )
 
 
-add_library(semantic_map_plugin src/semantic_map_plugin.cpp)
+add_library(semantic_map_plugin src/SemanticMap.cpp)
 target_compile_features(semantic_map_plugin PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_include_directories(semantic_map_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(
-  semantic_map_plugin
-  "rclcpp"
-  "navigation2"
-)
+
+ament_target_dependencies(semantic_map_plugin
+        ${dependencies}
+        )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

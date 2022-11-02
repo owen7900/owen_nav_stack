@@ -1,0 +1,26 @@
+features:
+  south_stairs:
+    xmin: 0
+    xmax: 1
+    ymin: 0
+    ymax: 1
+    cost: 255
+    floor: "1"
+  lobby_stairs:
+    xmin: 2
+    xmax: 3
+    ymin: 2
+    ymax: 3
+    cost: 255
+    floor: "1"
+  lobby_ramp:
+    xmin: 4
+    xmax: 5
+    ymin: 4
+    ymax: 5
+    cost: 0
+    floor: "1"
+
+destinations:
+  Room104: [0, 0, "1"]
+  Room220: [50, 50, "2"]
