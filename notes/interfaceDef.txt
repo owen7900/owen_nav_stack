@@ -8,6 +8,7 @@ TerrainFeaturesList String[] Topic - pub by nav pubbed, sub by ui
 UpcomingTerrainFeature {String(feature), int(time to collision)} Topic pub by nav pubbed, sub by ui
 CanContinue Empty-Bool Serice - called by nav called, provided by UI
 PushElevatorButton String - pub by nav pubbed , sub by UI
+HaveArrived Bool - pub by nav, sub by UI
 
 NAV CENTRIC
 Destination {String(floor_id), Pose} Topic - pub by amelia, sub by nav subbed
@@ -16,3 +17,6 @@ GetElevatorLocation String(floor_id) - Point Service - provided by amelia, calle
 
 OTHER
 MapPlugin for impassible/passible locations
+
+NOTES
+All maps will be published on topic /<MAP_NAME>

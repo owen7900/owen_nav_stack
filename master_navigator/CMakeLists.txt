@@ -15,7 +15,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(roomba_msgs REQUIRED)
 
-add_executable(master_navigator src/master_navigator.cpp src/MasterNavigator.cpp)
+add_executable(master_navigator src/master_navigator.cpp src/MasterNavigator.cpp src/MultifloorPathPlanner.cpp)
 target_include_directories(master_navigator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
