@@ -40,5 +40,4 @@ private:
   owen_common::Timestamp<geometry_msgs::msg::Twist> _autonomousCmd;
   owen_common::Timestamp<geometry_msgs::msg::Twist> _manualCmd;
   owen_common::Timestamp<RobotStatus> _status;
-  ControlSource _controlSource;
 };
