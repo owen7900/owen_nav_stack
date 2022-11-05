@@ -50,6 +50,7 @@ private:
   void control_loop();
   void process_new_destination();
   void print_status() const;
+
   void navigate_to_goal(NavigateClientT::Goal& goal);
   void traverse_elevator(ElevatorClientT::Goal& goal);
 
@@ -70,11 +71,13 @@ private:
   rclcpp_action::Client<ElevatorClientT>::SharedPtr elevator_server;
   std::shared_future<rclcpp_action::ClientGoalHandle<ElevatorClientT>::SharedPtr> future_elevator_handle;
 
+  rclcpp::TimerBase::SharedPtr timer;
+
   NavigationState state;
   roomba_msgs::msg::MultifloorPoint destination;
   roomba_msgs::msg::MultifloorPoint current_pos;
   roomba_msgs::msg::MultifloorPath path;
   uint path_idx;
   uint8_t log_period_count;
-  MultifloorPathPlanner planner;
+  std::unique_ptr<MultifloorPathPlanner> planner;
 };

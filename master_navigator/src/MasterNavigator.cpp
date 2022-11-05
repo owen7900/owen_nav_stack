@@ -17,10 +17,9 @@ std::unordered_map<NavigationState, std::string> MapToString = {
 
 }
 
-MasterNavigator::MasterNavigator(const std::string& name)
-  : rclcpp::Node(name), log_period_count(0), planner(shared_from_this())
+MasterNavigator::MasterNavigator(const std::string& name) : rclcpp::Node(name), log_period_count(0)
 {
-  this->declare_parameter("/starting_floor", rclcpp::ParameterType::PARAMETER_STRING);
+  this->declare_parameter("/starting_floor", rclcpp::ParameterValue("one"));
   current_pos.floor_id.data = this->get_parameter("/starting_floor").as_string();
 
   floor_pub = this->create_publisher<std_msgs::msg::String>("/floor", 1);
@@ -42,8 +41,7 @@ MasterNavigator::MasterNavigator(const std::string& name)
                                                                   get_node_logging_interface(),
                                                                   get_node_waitables_interface(), "traverse_elevator");
 
-  const auto timer =
-      this->create_wall_timer(std::chrono::duration<double>(0.1), std::bind(&MasterNavigator::control_loop, this));
+  timer = this->create_wall_timer(std::chrono::duration<double>(0.1), std::bind(&MasterNavigator::control_loop, this));
 }
 
 void MasterNavigator::destination_callback(roomba_msgs::msg::MultifloorPoint::ConstSharedPtr msg)
@@ -70,7 +68,19 @@ void MasterNavigator::control_loop()
 
 void MasterNavigator::process_new_destination()
 {
-  path = planner.plan_path(destination, current_pos);
+  if (!planner)
+  {
+    planner = std::make_unique<MultifloorPathPlanner>(shared_from_this());
+  }
+  path = planner->plan_path(destination, current_pos);
+
+  std::cout << "Planned Path: ";
+  for (const auto& p : path.points)
+  {
+    std::cout << "{" << p.floor_id.data << ", " << p.point.x << ", " << p.point.y << "}, ";
+  }
+  std::cout << std::endl;
+
   path_idx = 0;
 
   if (path.points.size() == 0)
@@ -78,13 +88,10 @@ void MasterNavigator::process_new_destination()
     RCLCPP_ERROR(get_logger(), "COULD NOT PLAN PATH TO DESTINATION");
     state = NavigationState::WaitingForDestination;
   }
-  else if (path.points.size() == 1)
+  else
   {
-    NavigateClientT::Goal goal;
-    goal.pose.pose.position = path.points.front().point;
-    goal.pose.header.frame_id = "/map";
-    goal.pose.header.stamp = this->get_clock()->now();
-    this->navigate_to_goal(goal);
+    state = NavigationState::NavigateToPoint;
+    handle_navigation_success();
   }
 }
 
@@ -134,8 +141,6 @@ void MasterNavigator::navigation_result_callback(
       return;
     case rclcpp_action::ResultCode::ABORTED:
     case rclcpp_action::ResultCode::CANCELED:
-      handle_navigation_failure();
-      return;
     case rclcpp_action::ResultCode::UNKNOWN:
     default:
       handle_navigation_failure();
@@ -161,7 +166,8 @@ void MasterNavigator::handle_navigation_success()
       arrived_pub->publish(msg);
       state = NavigationState::WaitingForDestination;
     }
-    else if (path.points[path_idx - 1].floor_id != path.points[path_idx].floor_id)
+    else if ((path_idx > 0 && path.points[path_idx - 1].floor_id != path.points[path_idx].floor_id) ||
+             (path_idx == 0 && path.points[path_idx].floor_id != current_pos.floor_id))
     {
       state = NavigationState::TraverseElevator;
       ElevatorClientT::Goal goal;

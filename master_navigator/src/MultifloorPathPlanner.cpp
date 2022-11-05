@@ -13,14 +13,19 @@ MultifloorPathPlanner::MultifloorPathPlanner(rclcpp::Node::SharedPtr _node) : no
 
   node->declare_parameter("/map_node_file", rclcpp::ParameterType::PARAMETER_STRING);
   std::string map_node_file;
-  node->get_parameter("/map_node_file", map_node_file);
+  if (!node->get_parameter("/map_node_file", map_node_file))
+  {
+    map_node_file = "/home/owen/owen_ws/src/owen_nav_stack/owen_bringup/config/map_nodes.yaml";
+  }
 
   this->read_map_nodes(map_node_file);
 }
 
 void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
 {
+  RCLCPP_INFO_STREAM(node->get_logger(), "Parsing " << map_node_file);
   YAML::Node top = YAML::LoadFile(map_node_file);
+  RCLCPP_INFO_STREAM(node->get_logger(), "Parsed " << map_node_file);
 
   for (const auto& n : top)
   {
@@ -34,12 +39,24 @@ void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
     map_nodes[id].node_id = id;
     for (const auto& conn : n.second["connections"])
     {
-      map_nodes[id].connections.push_back({ conn.second[id].as<int>(), conn.second["cost"].as<double>() });
+      map_nodes[id].connections.push_back({ conn["id"].as<int>(), conn["cost"].as<double>() });
     }
 
     map_nodes[id].point.floor_id.data = n.second["floor_id"].as<std::string>();
     map_nodes[id].point.point.x = n.second["x"].as<double>();
     map_nodes[id].point.point.y = n.second["y"].as<double>();
+  }
+
+  for (const auto& n : map_nodes)
+  {
+    std::cout << "id: " << n.first << " Pos: {" << n.second.point.point.x << ", " << n.second.point.point.y << ", "
+              << n.second.point.floor_id.data << "} Conns: ";
+    for (const auto& i : n.second.connections)
+    {
+      std::cout << "{" << i.first << ", " << i.second << "}, ";
+    }
+
+    std::cout << std::endl;
   }
 }
 
@@ -127,6 +144,8 @@ roomba_msgs::msg::MultifloorPath MultifloorPathPlanner::plan_path(roomba_msgs::m
     ret.points.push_back(map_nodes[i].point);
     i = prev[i];
   }
+
+  ret.points.push_back(map_nodes[start_node].point);
 
   std::reverse(ret.points.begin(), ret.points.end());
   return ret;
