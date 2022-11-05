@@ -1,6 +1,9 @@
 #include "master_navigator/MultifloorPathPlanner.hpp"
 #include <roomba_msgs/msg/detail/multifloor_path__struct.hpp>
 #include <yaml-cpp/yaml.h>
+#include <queue>
+
+#include "owen_common/PriorityQueue.hpp"
 
 MultifloorPathPlanner::MultifloorPathPlanner(rclcpp::Node::SharedPtr _node) : node(_node)
 {
@@ -40,11 +43,91 @@ void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
   }
 }
 
-roomba_msgs::msg::MultifloorPath MultifloorPathPlanner::plan_path(roomba_msgs::msg::MultifloorPoint _destination,
-                                                                  std::string _current_floor,
-                                                                  geometry_msgs::msg::Point _current_position)
+double get_sq_distance_between_points(const geometry_msgs::msg::Point& pt1, const geometry_msgs::msg::Point& pt2)
 {
-  destination = _destination;
-  current_position.floor_id.data = _current_floor;
-  current_position.point = _current_position;
+  return std::pow(pt1.x - pt2.x, 2.0) + std::pow(pt1.y - pt2.y, 2.0) + std::pow(pt1.z - pt2.z, 2.0);
+}
+
+int MultifloorPathPlanner::get_closest_node_id(const roomba_msgs::msg::MultifloorPoint& point) const
+{
+  double min_dist = std::numeric_limits<double>::max();
+  int ret = -1;
+  for (const auto& m : map_nodes)
+  {
+    if (m.second.point.floor_id == point.floor_id)
+    {
+      const double dist = get_sq_distance_between_points(m.second.point.point, point.point);
+      if (dist < min_dist)
+      {
+        ret = m.first;
+        min_dist = dist;
+      }
+    }
+  }
+
+  return ret;
+}
+
+roomba_msgs::msg::MultifloorPath MultifloorPathPlanner::plan_path(roomba_msgs::msg::MultifloorPoint destination,
+                                                                  roomba_msgs::msg::MultifloorPoint current_position)
+{
+  const int start_node = this->get_closest_node_id(current_position);
+  const int end_node = this->get_closest_node_id(destination);
+
+  if (start_node == -1 || end_node == -1)
+  {
+    RCLCPP_ERROR(node->get_logger(), "Could not find start or end in node graph");
+    return roomba_msgs::msg::MultifloorPath();
+  }
+
+  std::unordered_map<int, int> prev;
+
+  PriorityQueue<int> queue;
+  queue.insert(start_node, 0.0);
+
+  for (const auto& m : map_nodes)
+  {
+    if (m.first == start_node)
+    {
+      continue;
+    }
+    prev[m.first] = -1;
+    queue.insert(m.first, std::numeric_limits<double>::max());
+  }
+  queue.update();
+
+  while (!queue.empty())
+  {
+    const auto id = queue.top();
+    if (id == end_node)
+    {
+      break;
+    }
+    queue.pop_back();
+    const auto& node = map_nodes[id];
+    const double curr_dist = queue.get_weight(id);
+
+    for (const auto& neighbour : node.connections)
+    {
+      const double alt = curr_dist + neighbour.second;
+      if (alt < queue.get_weight(neighbour.first))
+      {
+        queue.update_weight(neighbour.first, alt);
+        prev[neighbour.first] = id;
+      }
+    }
+    queue.update();
+  }
+
+  roomba_msgs::msg::MultifloorPath ret;
+
+  int i = end_node;
+  while (i != start_node)
+  {
+    ret.points.push_back(map_nodes[i].point);
+    i = prev[i];
+  }
+
+  std::reverse(ret.points.begin(), ret.points.end());
+  return ret;
 }

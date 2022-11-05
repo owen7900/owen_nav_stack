@@ -13,10 +13,7 @@ HaveArrived Bool - pub by nav, sub by UI
 NAV CENTRIC
 Destination {String(floor_id), Pose} Topic - pub by amelia, sub by nav subbed
 GetPathObstacles Path-{String(feature), {String(floor_id), Rectangle(bounds)}} Serivce - provided by amelia, called by nav called
-GetElevatorLocation String(floor_id) - Point Service - provided by amelia, called by nav
 
 OTHER
 MapPlugin for impassible/passible locations
 
-NOTES
-All maps will be published on topic /<MAP_NAME>

@@ -14,6 +14,7 @@ find_package(navigation2 REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(roomba_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 add_executable(master_navigator src/master_navigator.cpp src/MasterNavigator.cpp src/MultifloorPathPlanner.cpp)
 target_include_directories(master_navigator PUBLIC
@@ -29,8 +30,10 @@ ament_target_dependencies(
   "roomba_msgs"
   "nav2_msgs"
   "nav2_util"
+  "yaml-cpp"
 
 )
+target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
 install(TARGETS master_navigator
   DESTINATION lib/${PROJECT_NAME})

@@ -19,6 +19,7 @@ set(msg_files
   srv/GetPathObstacles.srv
   srv/CanContinue.srv
   srv/GetElevatorPosition.srv
+  action/TraverseElevator.action
 )
 
 rosidl_generate_interfaces(
