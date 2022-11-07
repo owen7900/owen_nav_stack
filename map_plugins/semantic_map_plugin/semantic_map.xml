@@ -1,5 +1,0 @@
-<library path="semantic_map_plugin">
-    <class name="semantic_map_plugin::SemanticMap" type="semantic_map_plugin::SemanticMap" base_class_type="nav2_costmap_2d::Layer">
-        <description>This is plugin that will include manually labelled objects to the map</description>
-    </class>
-</library>

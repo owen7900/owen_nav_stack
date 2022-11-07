@@ -57,7 +57,7 @@ set(dependencies
 )
 
 add_library(expand_to_goal_costmap_plugin SHARED
-    src/expand_to_goal_costmap_plugin.cpp)
+        src/expand_to_goal_costmap_plugin.cpp)
 
 target_compile_features(expand_to_goal_costmap_plugin PUBLIC c_std_99 cxx_std_17) 
 
@@ -83,7 +83,7 @@ ament_target_dependencies(expand_to_goal_costmap_plugin
 target_compile_definitions(expand_to_goal_costmap_plugin PRIVATE "EXPAND_TO_GOAL_COSTMAP_PLUGIN_BUILDING_LIBRARY")
 
 install(
-  DIRECTORY include/
+  DIRECTORY include
   DESTINATION include
 )
 install(
@@ -106,7 +106,7 @@ if(BUILD_TESTING)
 endif()
 pluginlib_export_plugin_description_file(nav2_costmap_2d expand_to_goal.xml)
 ament_export_include_directories(
-  include
+        include
 )
 ament_export_libraries(
   expand_to_goal_costmap_plugin

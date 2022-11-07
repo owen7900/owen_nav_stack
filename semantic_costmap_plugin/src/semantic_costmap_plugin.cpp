@@ -1,10 +1,10 @@
 //
-// Created by kevin on 11/1/22.
+// Created by kevin on 11/2/22.
 //
 
-#include "../include/semantic_map_plugin/SemanticMap.hpp"
+#include "../include/semantic_costmap_plugin/semantic_costmap_plugin.hpp"
 
-namespace semantic_map_plugin{
+namespace semantic_costmap_plugin{
     SemanticMap::SemanticMap() : last_min_x_(-std::numeric_limits<float>::max()),
                                  last_min_y_(-std::numeric_limits<float>::max()),
                                  last_max_x_(std::numeric_limits<float>::max()),
@@ -13,31 +13,40 @@ namespace semantic_map_plugin{
     void SemanticMap::onInitialize()
     {
         loadConfig();
-        auto node = node_.lock();
-        declareParameter("enabled", rclcpp::ParameterValue(true));
-        node->get_parameter(name_ + "." + "enabled", enabled_);
         need_recalculation_ = false;
         current_ = true;
     }
 
     void SemanticMap::loadConfig() {
-        try {
-            YAML::Node nodes = YAML::LoadFile("/home/kevin/capston_ws/src/nav_stack/owen_bringup/config/semantic_map_params.yaml");
-            auto features = nodes["features"];
-            for(auto i = features.begin(); i != features.end(); i++){
-                YAML::Node node = *i;
-                double xmin = node["xmin"].as<double>();
-                double xmax = node["xmax"].as<double>();
-                double ymin = node["ymin"].as<double>();
-                double ymax = node["ymax"].as<double>();
-                int cost = node["cost"].as<int>();
-                no_pass_rects_.push_back(owen_common::cost_rect{xmin, xmax, ymin, ymax, cost});
-            }
-        } catch (YAML::Exception &e) {
-            RCLCPP_WARN(node_.lock()->get_logger(), e.what());
+        auto node = node_.lock();
+        if (!node) {
+            throw std::runtime_error{"Failed to lock node"};
         }
 
+        declareParameter("features", rclcpp::ParameterValue(std::vector<std::string>{}));
+        declareParameter("enabled", rclcpp::ParameterValue(true));
+        node->get_parameter(name_ + ".features", features_);
+        node->get_parameter(name_ + ".enabled", enabled_);
 
+        for(const auto& val : features_){
+            double x_min, x_max, y_min, y_max, cost;
+            double zero = 0.0;
+            std::cout << val << std::endl;
+            declareParameter(val + ".xmin", rclcpp::ParameterValue(zero));
+            declareParameter(val + ".xmax", rclcpp::ParameterValue(zero));
+            declareParameter(val + ".ymin", rclcpp::ParameterValue(zero));
+            declareParameter(val + ".ymax", rclcpp::ParameterValue(zero));
+            declareParameter(val + ".cost", rclcpp::ParameterValue(zero));
+
+            node->get_parameter(name_ + "." + val + ".xmin", x_min);
+            node->get_parameter(name_ + "." + val + ".xmax", x_max);
+            node->get_parameter(name_ + "." + val + ".ymin", y_min);
+            node->get_parameter(name_ + "." + val + ".ymax", y_max);
+            node->get_parameter(name_ + "." + val + ".cost", cost);
+
+            owen_common::CostRect rect {/*.xmin=*/ x_min, /*.xmax=*/ x_max, /*.ymin=*/ y_min, /*.ymax=*/ y_max, /*.cost=*/ cost};
+            no_pass_rects_.push_back(rect);
+        }
     }
 
 
@@ -121,8 +130,6 @@ namespace semantic_map_plugin{
                 }
             }
         }
-
-
     }
 
 
@@ -131,11 +138,11 @@ namespace semantic_map_plugin{
         need_recalculation_ = true;
 
         RCLCPP_DEBUG(rclcpp::get_logger(
-                "nav2_costmap_2d"), "GradientLayer::onFootprintChanged(): num footprint points: %lu",
+                "nav2_costmap_2d"), "SemanticMap::onFootprintChanged(): num footprint points: %lu",
                      layered_costmap_->getFootprint().size());
     }
 
-}  // namespace semantic_map_plugin
+} // namespace semantic_costmap_plugin
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(semantic_map_plugin::SemanticMap, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(semantic_costmap_plugin::SemanticMap, nav2_costmap_2d::Layer)

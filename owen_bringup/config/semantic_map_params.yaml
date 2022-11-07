@@ -1,4 +1,5 @@
 features:
+  list: [south_stairs, lobby_stairs, lobby_ramp]
   south_stairs:
     xmin: 0
     xmax: 1
