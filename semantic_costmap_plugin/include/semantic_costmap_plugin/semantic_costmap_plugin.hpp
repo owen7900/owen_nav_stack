@@ -9,12 +9,10 @@
 #include "owen_common/shapes.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
+#include "std_msgs/msg/string.hpp"
 #include <rclcpp/subscription.hpp>
 
 namespace semantic_costmap_plugin {
-    using nav2_costmap_2d::FREE_SPACE;
-    using nav2_costmap_2d::LETHAL_OBSTACLE;
-    using nav2_costmap_2d::NO_INFORMATION;
 
 class SemanticMap : public nav2_costmap_2d::Layer {
     public:
@@ -30,14 +28,16 @@ class SemanticMap : public nav2_costmap_2d::Layer {
         virtual bool isClearable() { return false; }
 
     private:
-        void loadConfig();
+        void setup();
+        void floorCallback(const std_msgs::msg::String::SharedPtr msg);
 
     private:
+        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr floor_sub_;
+        std::string floor_;
         double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
         bool need_recalculation_;
         std::vector<owen_common::CostRect> no_pass_rects_;
-        std::vector<owen_common::CostRect> pass_rects_;
-        std::vector<std::string> features_;
+        std::vector<std::string> no_pass_params_;
     };
 
 } // namespace semantic_costmap_plugin

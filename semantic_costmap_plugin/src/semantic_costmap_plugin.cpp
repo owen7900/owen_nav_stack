@@ -12,30 +12,33 @@ namespace semantic_costmap_plugin{
 
     void SemanticMap::onInitialize()
     {
-        loadConfig();
+        setup();
         need_recalculation_ = false;
         current_ = true;
     }
 
-    void SemanticMap::loadConfig() {
+    void SemanticMap::setup() {
         auto node = node_.lock();
         if (!node) {
             throw std::runtime_error{"Failed to lock node"};
         }
+        floor_sub_ = node->create_subscription<std_msgs::msg::String>("/floor_id", 10, std::bind(&SemanticMap::floorCallback, this, std::placeholders::_1));
 
-        declareParameter("features", rclcpp::ParameterValue(std::vector<std::string>{}));
+        declareParameter("no_pass", rclcpp::ParameterValue(std::vector<std::string>{}));
         declareParameter("enabled", rclcpp::ParameterValue(true));
-        node->get_parameter(name_ + ".features", features_);
+        node->get_parameter(name_ + ".no_pass", no_pass_params_);
         node->get_parameter(name_ + ".enabled", enabled_);
 
-        for(const auto& val : features_){
+        for(const auto& val : no_pass_params_){
             double x_min, x_max, y_min, y_max, cost;
+            std::string floor;
             double zero = 0.0;
             std::cout << val << std::endl;
             declareParameter(val + ".xmin", rclcpp::ParameterValue(zero));
             declareParameter(val + ".xmax", rclcpp::ParameterValue(zero));
             declareParameter(val + ".ymin", rclcpp::ParameterValue(zero));
             declareParameter(val + ".ymax", rclcpp::ParameterValue(zero));
+            declareParameter(val + ".floor", rclcpp::ParameterValue(""));
             declareParameter(val + ".cost", rclcpp::ParameterValue(zero));
 
             node->get_parameter(name_ + "." + val + ".xmin", x_min);
@@ -43,10 +46,16 @@ namespace semantic_costmap_plugin{
             node->get_parameter(name_ + "." + val + ".ymin", y_min);
             node->get_parameter(name_ + "." + val + ".ymax", y_max);
             node->get_parameter(name_ + "." + val + ".cost", cost);
+            node->get_parameter(name_ + "." + val + ".floor", floor);
 
-            owen_common::CostRect rect {/*.xmin=*/ x_min, /*.xmax=*/ x_max, /*.ymin=*/ y_min, /*.ymax=*/ y_max, /*.cost=*/ cost};
+            owen_common::CostRect rect {/*.xmin=*/ x_min, /*.xmax=*/ x_max, /*.ymin=*/ y_min, /*.ymax=*/ y_max, /*.cost=*/ cost, /*.floor=*/ floor};
             no_pass_rects_.push_back(rect);
         }
+    }
+
+    void SemanticMap::floorCallback(const std_msgs::msg::String::SharedPtr msg)
+    {
+        floor_ = msg->data;
     }
 
 
@@ -99,32 +108,18 @@ namespace semantic_costmap_plugin{
         max_i = std::min(static_cast<int>(size_x), max_i);
         max_j = std::min(static_cast<int>(size_y), max_j);
 
-        for(auto i = pass_rects_.begin(); i != pass_rects_.end(); i++){
-            auto rect = *i;
-            unsigned int xm_min, xm_max, ym_min, ym_max;
-            if(master_grid.worldToMap(rect.xmin, rect.ymin, xm_min, ym_min) &&
-               master_grid.worldToMap(rect.xmax, rect.xmax, xm_max, ym_max)){
-                for(int x = xm_min; x < xm_max; x++){
-                    for(int y = ym_min; y < ym_max; y++){
-                        if(x < max_i && y < max_j){
-                            int index = master_grid.getIndex(x, y);
-                            master_array[index] = rect.cost;
-                        }
-                    }
-                }
-            }
-        }
-
         for(auto i = no_pass_rects_.begin(); i != no_pass_rects_.end(); i++){
             auto rect = *i;
-            unsigned int xm_min, xm_max, ym_min, ym_max;
-            if(master_grid.worldToMap(rect.xmin, rect.ymin, xm_min, ym_min) &&
-               master_grid.worldToMap(rect.xmax, rect.xmax, xm_max, ym_max)){
-                for(int x = xm_min; x < xm_max; x++){
-                    for(int y = ym_min; y < ym_max; y++){
-                        if(x < max_i && y < max_j){
-                            int index = master_grid.getIndex(x, y);
-                            master_array[index] = rect.cost;
+            if(rect.floor == floor_){
+                unsigned int xm_min, xm_max, ym_min, ym_max;
+                if(master_grid.worldToMap(rect.xmin, rect.ymin, xm_min, ym_min) &&
+                   master_grid.worldToMap(rect.xmax, rect.xmax, xm_max, ym_max)){
+                    for(int x = xm_min; x < xm_max; x++){
+                        for(int y = ym_min; y < ym_max; y++){
+                            if(x < max_i && y < max_j){
+                                int index = master_grid.getIndex(x, y);
+                                master_array[index] = rect.cost;
+                            }
                         }
                     }
                 }
