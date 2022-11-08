@@ -43,7 +43,7 @@ SystemController::SystemController(const std::string& name) : rclcpp::Node(name)
   double controlPeriod;
   this->get_parameter("control_period", controlPeriod);
   this->_timer = this->create_wall_timer(std::chrono::duration<double>(controlPeriod),
-                                            std::bind(&SystemController::controlCallback, this));
+                                         std::bind(&SystemController::controlCallback, this));
 }
 
 void SystemController::bumperCallback(const create_msgs::msg::Bumper::ConstSharedPtr msg)
@@ -90,7 +90,7 @@ void SystemController::cmdVelCallback(const geometry_msgs::msg::Twist::ConstShar
 
 void SystemController::controlCallback()
 {
-  if(this->_manualCmd.IsDataTimeout())
+  if (this->_manualCmd.IsDataTimeout())
   {
     auto toSend = std::make_unique<geometry_msgs::msg::Twist>();
 
