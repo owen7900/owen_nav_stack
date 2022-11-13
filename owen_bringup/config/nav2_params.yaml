@@ -143,15 +143,15 @@ global_costmap:
       semantic_map:
         plugin: "semantic_costmap_plugin::SemanticMap"
         enabled: true
-        no_pass: ["one", "three"]
-        one:
+        no_pass: ["block1", "block2"]
+        block1:
           xmin: 0.0
           xmax: 0.5
           ymin: 0.0
           ymax: 0.5
           floor: "1"
           cost: 254.0
-        three:
+        block2:
           xmin: 1.0
           xmax: 1.5
           ymin: 0.0

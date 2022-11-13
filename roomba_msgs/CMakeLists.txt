@@ -14,8 +14,9 @@ set(msg_files
   msg/MultifloorPoint.msg
   msg/MultifloorRectangle.msg
   msg/MultifloorPath.msg
-  msg/UpcomingTerrainFeature.msg
-  srv/GetPathObstacles.srv
+        msg/UpcomingTerrainFeature.msg
+        srv/GetPathObstacles.srv
+        srv/GetAvailableDestinations.srv
 )
 
 rosidl_generate_interfaces(

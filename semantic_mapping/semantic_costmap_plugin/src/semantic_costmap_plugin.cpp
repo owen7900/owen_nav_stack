@@ -48,7 +48,13 @@ namespace semantic_costmap_plugin{
             node->get_parameter(name_ + "." + val + ".cost", cost);
             node->get_parameter(name_ + "." + val + ".floor", floor);
 
-            owen_common::CostRect rect {/*.xmin=*/ x_min, /*.xmax=*/ x_max, /*.ymin=*/ y_min, /*.ymax=*/ y_max, /*.cost=*/ cost, /*.floor=*/ floor};
+            owen_common::CostRect rect {/*.xmin=*/ x_min,
+                                        /*.xmax=*/ x_max,
+                                        /*.ymin=*/ y_min,
+                                        /*.ymax=*/ y_max,
+                                        /*.cost=*/ cost,
+                                        /*.floor=*/ floor,
+                                        /*.label=*/ "no touchy"};
             no_pass_rects_.push_back(rect);
         }
     }
