@@ -17,7 +17,7 @@ thread.start()
 l = Lock();
 
 def floor_callback(msg):
-    global need_to_restart, slam_launch, ld, ls, current_loaded_floor, l
+    global slam_launch, ld, ls, current_loaded_floor, l
     if msg.data != current_loaded_floor:
         ls.shutdown()
         current_loaded_floor = msg.data
@@ -31,7 +31,6 @@ def floor_callback(msg):
                     name='slam_toolbox',
                     output='screen'
                     )
-        need_to_restart = True
         ld = LaunchDescription([slam_launch])
         l.acquire(blocking=True)
         ls = LaunchService()
