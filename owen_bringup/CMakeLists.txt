@@ -25,6 +25,11 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+install(DIRECTORY scripts
+  DESTINATION lib/${PROJECT_NAME}
+  PATTERN ".svn" EXCLUDE
+  )
+
 install(DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}
   PATTERN ".svn" EXCLUDE
