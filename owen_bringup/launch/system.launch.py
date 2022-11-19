@@ -30,24 +30,7 @@ def main(argv = sys.argv[1:]):
         )
 
     else:
-        slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
-                                             'config', 'mapper_params_localization.yaml')
-        slam_launch = Node(
-          parameters=[
-              slam_params_file
-          ],
-          package='slam_toolbox',
-          executable='localization_slam_toolbox_node',
-          name='slam_toolbox',
-          output='screen'
-        ) 
-
-
-    slam_config = DeclareLaunchArgument(
-        'slam_params_file',
-        default_value = slam_params_file,
-        description = 'launch config for mapper'
-    )
+        slam_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher')
 
     if(not args.simulation):
         lidar_node = Node(
@@ -90,7 +73,6 @@ def main(argv = sys.argv[1:]):
     )
 
     ld = LaunchDescription([
-        slam_config,
         navigation_launch,
         slam_launch,
         system_controller
