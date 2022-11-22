@@ -21,7 +21,7 @@ private:
     void getAvailableDestination(const std::shared_ptr<roomba_msgs::srv::GetAvailableDestinations::Request> request, std::shared_ptr<roomba_msgs::srv::GetAvailableDestinations::Response> response);
     void destinationNameCallback(std_msgs::msg::String msg);
     void loadConfig();
-    bool isPointInRect(geometry_msgs::msg::Point point, roomba_msgs::msg::MultifloorRectangle rect);
+    bool isPointInPath(double x, double y, double x1, double x2, double ya, double y2);
 
 private:
     rclcpp::Service<roomba_msgs::srv::GetPathObstacles>::SharedPtr pathFeaturesService_;

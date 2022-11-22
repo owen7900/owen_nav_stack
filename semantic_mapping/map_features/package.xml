@@ -11,6 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>yaml-cpp</depend>
+  <depend>Eigen</depend>
   <depend>roomba_msgs</depend>
   <depend>owen_common</depend>
 

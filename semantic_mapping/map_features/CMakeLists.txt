@@ -11,9 +11,11 @@ find_package(rclcpp REQUIRED)
 find_package(roomba_msgs REQUIRED)
 find_package(owen_common REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 add_executable(${PROJECT_NAME} src/feature_node.cpp src/FeaturesInterface.cpp)
 ament_target_dependencies(${PROJECT_NAME}
+        Eigen3
         yaml-cpp
         rclcpp
         roomba_msgs

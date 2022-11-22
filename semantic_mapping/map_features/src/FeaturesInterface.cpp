@@ -4,11 +4,15 @@
 
 #include "../include/map_features/FeaturesInterface.hpp"
 #include <yaml-cpp/yaml.h>
+#include <eigen3/Eigen/Dense>
 
 namespace CONSTANTS{
     const std::string ConfigPath = "/home/kevin/capston_ws/src/nav_stack/owen_bringup/config/multi_floor_params.yaml";
 }
 
+
+using Line2 = Eigen::Hyperplane<double,2>;
+using Vec2  = Eigen::Vector2d;
 
 FeaturesInterface::FeaturesInterface(const std::string& name) : rclcpp::Node(name){
     loadConfig();
@@ -96,18 +100,65 @@ void FeaturesInterface::loadConfig() {
 void FeaturesInterface::getPathFeatures(const std::shared_ptr<roomba_msgs::srv::GetPathObstacles::Request> request,
                                         std::shared_ptr<roomba_msgs::srv::GetPathObstacles::Response> response) {
     std::vector<roomba_msgs::msg::MultifloorRectangle> pathFeatures;
+    roomba_msgs::msg::MultifloorPoint lastPoint;
+    int i = 0;
+    for (const auto &point : request->path.points){
+        if(i == 0){
+            i++;
+            lastPoint = point;
+            continue;
+        }
 
-    for(const auto& point : request->path.points){
-        for(const auto& feature : features_){
-            if(point.floor_id.data == feature.floor_id.data){
-                if(isPointInRect(point.point, feature)){
-                    pathFeatures.push_back(feature);
+        Vec2 pathPoint1(lastPoint.point.x, lastPoint.point.y);
+        Vec2 pathPoint2(point.point.x, point.point.y);
+        Line2 path_line = Line2::Through(pathPoint1, pathPoint2);
+
+        for(const auto& rect : features_){
+            if(point.floor_id.data == rect.floor_id.data){
+                // | left
+                Vec2 p1(rect.p1.x, rect.p1.y);
+                Vec2 p2(rect.p1.x, rect.p2.y);
+                Line2 left = Line2::Through(p1, p2);
+                auto intersection = path_line.intersection(left);
+                if(isPointInPath(intersection.x(), intersection.y(), pathPoint1.x(), pathPoint2.x(), pathPoint1.y(), pathPoint2.y())){
+                        pathFeatures.push_back(rect);
+                        continue;
+                }
+
+                // -- top
+                Vec2 p3(rect.p1.x, rect.p2.y);
+                Vec2 p4(rect.p2.x, rect.p2.y);
+                Line2 top = Line2::Through(p3, p4);
+                intersection = path_line.intersection(top);
+                if(isPointInPath(intersection.x(), intersection.y(), pathPoint1.x(), pathPoint2.x(), pathPoint1.y(), pathPoint2.y())){
+                        pathFeatures.push_back(rect);
+                        continue;
+                }
+
+                // | right
+                Vec2 p5(rect.p2.x, rect.p1.y);
+                Vec2 p6(rect.p2.x, rect.p2.y);
+                Line2 right = Line2::Through(p5, p6);
+                intersection = path_line.intersection(right);
+                if(isPointInPath(intersection.x(), intersection.y(), pathPoint1.x(), pathPoint2.x(), pathPoint1.y(), pathPoint2.y())){
+                        pathFeatures.push_back(rect);
+                        continue;
+                }
+
+                // -- bottom
+                Vec2 p7(rect.p1.x, rect.p1.y);
+                Vec2 p8(rect.p2.x, rect.p1.y);
+                Line2 bottom = Line2::Through(p7, p8);
+                intersection = path_line.intersection(right);
+                if(isPointInPath(intersection.x(), intersection.y(), pathPoint1.x(), pathPoint2.x(), pathPoint1.y(), pathPoint2.y())){
+                        pathFeatures.push_back(rect);
+                        continue;
                 }
             }
         }
     }
 
-    response->bounds = pathFeatures;
+    response->features_in_path = pathFeatures;
 }
 
 void FeaturesInterface::getAvailableDestination(
@@ -125,12 +176,11 @@ void FeaturesInterface::destinationNameCallback(std_msgs::msg::String msg) {
 }
 
 
-bool FeaturesInterface::isPointInRect(geometry_msgs::msg::Point point, roomba_msgs::msg::MultifloorRectangle rect){
-    if(point.x >= rect.p1.x &&
-       point.x <= rect.p2.x &&
-       point.y >= rect.p1.y &&
-       point.y <= rect.p2.y)
-    {
+bool FeaturesInterface::isPointInPath(double x, double y, double x1, double x2, double y1, double y2) {
+    if(x >= x1 &&
+       x <= x2 &&
+       y >= y1 &&
+       y <= y2){
         return true;
     }
     return false;

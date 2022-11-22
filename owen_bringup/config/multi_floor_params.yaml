@@ -1,17 +1,24 @@
 features:
   one:
-    xmin: 0.0
-    xmax: 0.0
-    ymin: 0.0
-    ymax: 0.0
+    xmin: 5.0
+    xmax: 6.0
+    ymin: 1.0
+    ymax: 7.0
     label: "ramp1"
     floor: "1"
   two:
     xmin: 1.0
-    xmax: 1.0
+    xmax: 2.0
     ymin: 1.0
-    ymax: 1.0
+    ymax: 2.0
     label: "ramp2"
+    floor: "1"
+  three:
+    xmin: 2.0
+    xmax: 3.0
+    ymin: 1.0
+    ymax: 2.0
+    label: "ramp23"
     floor: "1"
 
 destinations:
