@@ -6,34 +6,38 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription, LaunchService
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource, AnyLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PythonExpression
 
 
-def main(argv = sys.argv[1:]):
+def generate_launch_description():
 
-    parser = ArgumentParser(description='Launch the owen_nav_stack system')
-    parser.add_argument('-s', '--simulation', action='store_true', help='run the stack in simulation', default=False)
-    parser.add_argument('-e', '--explore', action='store_true', help='run the stack in explore mode', default=False)
-    parser.add_argument('-l', '--localization', action='store_true', help='run the stack in localization mode, default is mapping mode', default=False)
+    # parser = ArgumentParser(description='Launch the owen_nav_stack system')
+    # parser.add_argument('-s', '--simulation', action='store_true', help='run the stack in simulation', default=False)
+    # parser.add_argument('-l', '--localization', action='store_true', help='run the stack in localization mode, default is mapping mode', default=False)
+    # args, sys.argv = parser.parse_known_args()
 
-    args, argv = parser.parse_known_args()
+    simulation = LaunchConfiguration('simulation')
+    localization = LaunchConfiguration('localization')
 
-    if(not args.localization):
-        slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
+    simulation_arg = DeclareLaunchArgument("simulation", default_value='True')
+    localization_arg = DeclareLaunchArgument("localization", default_value='False')
+
+    slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
                                     'config', 'mapper_params_online_async.yaml')
-        slam_launch = IncludeLaunchDescription(
+    slam_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
                     get_package_share_directory('slam_toolbox'), 'launch'),
                     '/online_async_launch.py']),
-        launch_arguments = {'slam_params_file': slam_params_file}.items()
+                    launch_arguments = {'slam_params_file': slam_params_file}.items(), 
+                    condition=IfCondition(PythonExpression(['not ', localization]))
         )
 
-    else:
-        slam_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher')
+    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
 
-    if(not args.simulation):
-        lidar_node = Node(
+    lidar_node = Node(
         package='rplidar_ros',
         executable='rplidar_composition',
         name='lidar_node',
@@ -42,28 +46,25 @@ def main(argv = sys.argv[1:]):
             'serial_port' : '/dev/lidar',
             'frame_id' : 'laser',
             'angle_compensate' : True
-        }]
+            }],
+        condition=IfCondition(PythonExpression(['not ', simulation]))
         )
-    else:
-        simulation_launch = IncludeLaunchDescription(
+    simulation_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([os.path.join(
-                get_package_share_directory('owen_bringup'), 'launch', 'simulation.launch.py')])
+                get_package_share_directory('owen_bringup'), 'launch', 'simulation.launch.py')]),
+            condition=IfCondition(PythonExpression([simulation]))
             )
 
     navigation_launch = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('owen_bringup'), 'launch'),
-         '/navigation.launch.py'])
-      )
-    if(args.explore):
-        explore_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('explore_lite'), 'launch', 'explore.launch.py')])
-            )
+         '/navigation.launch.py']))
 
     create_launch = IncludeLaunchDescription(
       AnyLaunchDescriptionSource([os.path.join(
          get_package_share_directory('create_bringup'), 'launch'),
-         '/create_2.launch'])
+         '/create_2.launch']),
+        condition=IfCondition(PythonExpression(['not ', simulation]))
       )
     system_controller = Node(
         package='system_controller',
@@ -73,27 +74,23 @@ def main(argv = sys.argv[1:]):
     )
 
     ld = LaunchDescription([
-        navigation_launch,
-        slam_launch,
-        system_controller
+        simulation_arg,
+        localization_arg,
+        # navigation_launch,
+        # slam_launch,
+        system_controller,
+        create_launch,
+        simulation_launch,
+        localization_launch,
+        lidar_node
         ])
 
-    if(args.simulation): 
-        print("DOING SIM")
-        ld.add_entity(simulation_launch)
-    else:
-        ld.add_action(lidar_node)
-        ld.add_entity(create_launch)
+    return ld;
 
-    if(args.explore):
-        print("EXPLORING")
-        ld.add_entity(explore_launch)
-
-
-    ls = LaunchService(argv=argv)
-    ls.include_launch_description(ld)
-    return ls.run()
 
 if __name__ == "__main__":
-    main()
+    ls = LaunchService(argv=sys.argv)
+    ls.include_launch_description(generate_launch_description())
+    ls.run()
+
 

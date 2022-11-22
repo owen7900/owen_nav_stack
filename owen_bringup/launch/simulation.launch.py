@@ -18,14 +18,15 @@ def generate_launch_description():
 
   world = os.path.join(get_package_share_directory('owen_bringup'), 'worlds', 'willowGarage.world')
 
-  create_desc = get_package_share_directory('create_description') + '/urdf'
+  create_desc = get_package_share_directory('create_description')
   print("urdf_file_name : {}".format(urdf_file_name))
+  xml = xacro.process_file(urdf).toprettyxml(indent='   ')
   return LaunchDescription([
 
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='true',
-            description='Use simulation (Gazebo) clock if true'),
+            description='Use simulation/Gazebo clock'),
 
         SetEnvironmentVariable(name='GAZEBO_MODEL_PATH',value=create_desc+"/../"),
 
@@ -39,7 +40,7 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
-                {'robot_description': xacro.process_file(urdf).toxml()}]
+                {'robot_description': xml}]
         ),
 
         Node(
