@@ -7,6 +7,8 @@
 #include "elevator_traverser/Configuration.hpp"
 #include "roomba_msgs/action/traverse_elevator.hpp"
 #include "apriltag_msgs/msg/april_tag_detection_array.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
 
 enum class TraversalState
 {
@@ -67,4 +69,6 @@ private:
   double _kAngle;
   double _kDistance;
   double _goalTolerance;
+  std::shared_ptr<tf2_ros::TransformListener> _transformListener;
+  std::unique_ptr<tf2_ros::Buffer> _tfBuffer;
 };

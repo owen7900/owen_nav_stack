@@ -1,5 +1,10 @@
 #include "elevator_traverser/ElevatorTraverser.hpp"
 
+#include <tf2/time.h>
+#include <tf2/utils.h>
+#include <tf2/convert.h>
+#include <geometry_msgs/msg/detail/pose__struct.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <functional>
 
 ElevatorTraverser::ElevatorTraverser(const std::string& name) : rclcpp::Node(name)
@@ -7,11 +12,11 @@ ElevatorTraverser::ElevatorTraverser(const std::string& name) : rclcpp::Node(nam
   this->declare_parameter("elevator_config_file", rclcpp::ParameterType::PARAMETER_STRING);
   std::string elevator_config_file = "/home/owen/owen_ws/src/owen_nav_stack/owen_bringup/config/elevator.yaml";
   this->get_parameter("elevator_config_file", elevator_config_file);
-  _config.load(elevator_config_file);
+  this->_config.load(elevator_config_file);
 
-  this->declare_parameter("k_angle", 0.2);
+  this->declare_parameter("k_angle", 0.5);
   this->get_parameter("k_angle", this->_kAngle);
-  this->declare_parameter("k_distance", 0.2);
+  this->declare_parameter("k_distance", 0.02);
   this->get_parameter("k_distance", this->_kDistance);
   this->declare_parameter("goal_tolerance", 0.1);
   this->get_parameter("goal_tolerance", this->_goalTolerance);
@@ -26,20 +31,24 @@ ElevatorTraverser::ElevatorTraverser(const std::string& name) : rclcpp::Node(nam
   this->_tagSub = this->create_subscription<apriltag_msgs::msg::AprilTagDetectionArray>(
       "/detections", 10, std::bind(&ElevatorTraverser::tagDetectionCallback, this, std::placeholders::_1));
 
-  _timer = this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&ElevatorTraverser::execute, this));
-  // timer->cancel(); // uncomment this when testing is done
-  // reset();
+  this->_tfBuffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  this->_transformListener = std::make_shared<tf2_ros::TransformListener>(*this->_tfBuffer);
+
+  this->_timer =
+      this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&ElevatorTraverser::execute, this));
+  this->_timer->cancel();  // uncomment this when testing is done
+  reset();
   this->_state = TraversalState::Initialization;
 }
 
 void ElevatorTraverser::reset()
 {
-  if (!_timer->is_canceled())
+  if (!this->_timer->is_canceled())
   {
-    // this->timer->cancel();
+    this->_timer->cancel();
   }
-  // this->goal_handle_ = nullptr;
-  // this->state = TraversalState::Initialization;
+  this->_goalHandle = nullptr;
+  this->_state = TraversalState::Initialization;
 }
 
 rclcpp_action::GoalResponse ElevatorTraverser::handleGoal(const rclcpp_action::GoalUUID& uuid,
@@ -65,9 +74,9 @@ ElevatorTraverser::handleCancel(const std::shared_ptr<GoalHandleTraverseElevator
 void ElevatorTraverser::handleAccepted(const std::shared_ptr<GoalHandleTraverseElevator> goal_handle)
 {
   this->reset();
-  _goalHandle = goal_handle;
+  this->_goalHandle = goal_handle;
   RCLCPP_INFO_STREAM(this->get_logger(),
-                     "Exectuing goal with target floor " << _goalHandle->get_goal()->target_floor.data);
+                     "Exectuing goal with target floor " << this->_goalHandle->get_goal()->target_floor.data);
   this->_timer->reset();
 }
 
@@ -75,36 +84,36 @@ void ElevatorTraverser::execute()
 {
   if (!this->_goalHandle)
   {
-    // return;  UNCOMMENT THIS WHEN INTEGRATING
+    return;
   }
-  switch (_state)
+  switch (this->_state)
   {
     case TraversalState::Initialization:
       if (this->initializeTraversal())
       {
         std::cout << "Transition to allign with outside" << std::endl;
-        _state = TraversalState::AlignWithOutside;
+        this->_state = TraversalState::AlignWithOutside;
       }
       break;
     case TraversalState::AlignWithOutside:
-      if (this->alignToTag(_status.door_id))
+      if (this->alignToTag(this->_status.door_id))
       {
         std::cout << "Transition to wait outside" << std::endl;
-        _state = TraversalState::WaitOutside;
+        this->_state = TraversalState::WaitOutside;
       }
       break;
     case TraversalState::WaitOutside:
-      if (this->canSeeTag(_config.GetElevatorFromDoorTag(_status.door_id).backId))
+      if (this->canSeeTag(this->_config.GetElevatorFromDoorTag(this->_status.door_id).backId))
       {
         std::cout << "Transition to inside alligh" << std::endl;
-        _state = TraversalState::AlignWithInside;
+        this->_state = TraversalState::AlignWithInside;
       }
       break;
     case TraversalState::AlignWithInside:
-      if (this->alignToTag(_config.GetElevatorFromDoorTag(_status.door_id).backId))
+      if (this->alignToTag(this->_config.GetElevatorFromDoorTag(this->_status.door_id).backId))
       {
         std::cout << "Transition to rotate to face door" << std::endl;
-        _state = TraversalState::RotateToFaceDoor;
+        this->_state = TraversalState::RotateToFaceDoor;
       }
       break;
 
@@ -112,29 +121,29 @@ void ElevatorTraverser::execute()
       if (this->rotateToFaceDoor())
       {
         std::cout << "Transition to wait for door close" << std::endl;
-        _state = TraversalState::WaitForDoorToClose;
+        this->_state = TraversalState::WaitForDoorToClose;
       }
       break;
     case TraversalState::WaitForDoorToClose:
-      if (this->canSeeTag(_config.GetElevatorFromDoorTag(_status.door_id).doorId))
+      if (this->canSeeTag(this->_config.GetElevatorFromDoorTag(this->_status.door_id).doorId))
       {
         std::cout << "Transition to WaitForDoorToOpen" << std::endl;
-        _state = TraversalState::WaitForDoorToOpen;
+        this->_state = TraversalState::WaitForDoorToOpen;
       }
       break;
     case TraversalState::WaitForDoorToOpen:
-      if (!this->canSeeTag(_config.GetElevatorFromDoorTag(_status.door_id).doorId))
+      if (!this->canSeeTag(this->_config.GetElevatorFromDoorTag(this->_status.door_id).doorId))
       {
         std::cout << "Transition to exit elevator" << std::endl;
-        _state = TraversalState::ExitElevator;
+        this->_state = TraversalState::ExitElevator;
       }
       break;
     case TraversalState::ExitElevator:
       if (this->exitElevator())
       {
-        // TraverseElevator::Result::SharedPtr result;
-        // this->goal_handle_->succeed(result);
-        // this->timer->cancel();
+        TraverseElevator::Result::SharedPtr result;
+        this->_goalHandle->succeed(result);
+        this->_timer->cancel();
       }
       break;
   }
@@ -152,7 +161,7 @@ bool ElevatorTraverser::initializeTraversal()
 
   for (const auto& det : this->_detections->detections)
   {
-    if (_config.IsElevatorDoorTag(det.id))
+    if (this->_config.IsElevatorDoorTag(det.id))
     {
       door_id = det.id;
       can_see_door = true;
@@ -166,7 +175,7 @@ bool ElevatorTraverser::initializeTraversal()
     return false;
   }
 
-  _status.door_id = door_id;
+  this->_status.door_id = door_id;
   return true;
 }
 
@@ -184,12 +193,28 @@ bool ElevatorTraverser::alignToTag(int32_t id)
     this->_cmdVelPub->publish(cmd);
     return false;
   }
-  // TODO get these from the detections
-  double diffAngle = 0.0, diffPos = 0.0;
+  geometry_msgs::msg::TransformStamped t;
+  const std::string tagFrame = "tag36h11:" + std::to_string(id);
 
-  cmd.linear.x = diffPos * this->_kDistance;
+  try
+  {
+    t = this->_tfBuffer->lookupTransform("base_footprint", tagFrame, tf2::TimePointZero);
+  }
+  catch (tf2::TransformException& e)
+  {
+    RCLCPP_WARN_STREAM(this->get_logger(), "Failed to get transform to " << tagFrame << " error: " << e.what());
+    return false;
+  }
+  const double diffPos = std::pow(t.transform.translation.x, 2) + std::pow(t.transform.translation.y, 2);
+
+  const double diffAngle = std::atan2(t.transform.translation.y, t.transform.translation.x);
+
+  cmd.linear.x = diffPos * (diffPos > this->_goalTolerance ? this->_kDistance : 0.0);
   cmd.angular.z = diffAngle * this->_kAngle * (cmd.linear.x >= 0 ? 1.0 : -1.0);
   this->_cmdVelPub->publish(cmd);
+
+  RCLCPP_INFO_STREAM(this->get_logger(), "Delta P: " << diffPos << " A: " << diffAngle << " Sending: " << cmd.linear.x
+                                                     << ", " << cmd.angular.z);
 
   return diffPos < this->_goalTolerance;
 }

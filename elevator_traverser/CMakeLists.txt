@@ -14,6 +14,9 @@ find_package(std_msgs REQUIRED)
 find_package(owen_common REQUIRED)
 find_package(apriltag_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(tf2_ros)
+find_package(tf2_geometry_msgs)
+find_package(tf2 REQUIRED)
 
 add_executable(elevator_traverser src/elevator_traverser_node.cpp src/ElevatorTraverser.cpp src/Configuration.cpp)
 target_include_directories(elevator_traverser PUBLIC
@@ -29,6 +32,9 @@ ament_target_dependencies(
   rclcpp_action
   apriltag_msgs
   yaml-cpp
+  tf2_ros
+  tf2
+  tf2_geometry_msgs
 )
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
