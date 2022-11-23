@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import os
 import sys
-from argparse import ArgumentParser
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription, LaunchService
@@ -13,12 +12,6 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 
 
 def generate_launch_description():
-
-    # parser = ArgumentParser(description='Launch the owen_nav_stack system')
-    # parser.add_argument('-s', '--simulation', action='store_true', help='run the stack in simulation', default=False)
-    # parser.add_argument('-l', '--localization', action='store_true', help='run the stack in localization mode, default is mapping mode', default=False)
-    # args, sys.argv = parser.parse_known_args()
-
     simulation = LaunchConfiguration('simulation')
     localization = LaunchConfiguration('localization')
 
@@ -73,6 +66,34 @@ def generate_launch_description():
         output='screen'
     )
 
+    elevator_traverser = Node(
+            package='elevator_traverser',
+            executable='elevator_traverser',
+            name='elevator_traverser',
+            output='screen'
+            )
+
+    master_navigator = Node(
+            package='master_navigator',
+            executable='master_navigator',
+            name='master_navigator',
+            output='screen'
+            )
+
+    apriltag_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('apriltag_ros'), 'launch', 'tag_36h11_all.launch.py')]), condition=IfCondition(PythonExpression(['not ', simulation]))
+            )
+
+    apriltag_node = Node(
+            package='apriltag_ros',
+            executable='apriltag_node',
+            condition=IfCondition(PythonExpression([simulation])),
+            remappings=[('/image_rect', '/george_cam/image_raw'),
+                        ('/camera_info','/george_cam/camera_info')]
+            )
+
+
+
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
@@ -82,7 +103,11 @@ def generate_launch_description():
         create_launch,
         navigation_launch,
         localization_launch,
-        lidar_node
+        lidar_node,
+        elevator_traverser,
+        apriltag_launch,
+        master_navigator,
+        apriltag_node
         ])
 
     return ld;
