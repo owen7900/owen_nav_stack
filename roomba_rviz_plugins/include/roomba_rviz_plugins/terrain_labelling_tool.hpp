@@ -15,13 +15,23 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/int64.hpp"
+#include "std_msgs/msg/string.hpp"
+
 #include "rviz_common/tool.hpp"
 #include "rviz_rendering/viewport_projection_finder.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
 
+#include "roomba_msgs/msg/multifloor_rectangle.hpp"
+#include "roomba_msgs/msg/multifloor_point.hpp"
+
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "visualization_msgs/msg/marker.hpp"
+
 namespace rviz_rendering
 {
-    class Arrow;
+    class Shape;
 }  // namespace rviz_rendering
 
 namespace roomba_rviz_plugins{
@@ -37,25 +47,35 @@ namespace roomba_rviz_plugins{
         int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
     private:
-        void onThingFinished(double x0, double y0, double x1, double y1);
-        int processMouseLeftButtonPressed(std::pair<bool, Ogre::Vector3> xy_plane_intersection);
-        int processMouseMoved(std::pair<bool, Ogre::Vector3> xy_plane_intersection);
-        int processMouseLeftButtonReleased();
-        void makeArrowVisibleAndSetOrientation(double angle);
-        double calculateAngle(Ogre::Vector3 start_point, Ogre::Vector3 end_point);
+        void onMouseUp(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        int onMouseDown(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        void labellingTypeCallback(std_msgs::msg::Int64 msg);
+        void addLabelCallback(std_msgs::msg::String msg);
+        void floorCallback(std_msgs::msg::String msg);
+        void createObstacleRect(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        void createFeatureRect(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        void createDestinationRect(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        void drawRect(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3> &pair, const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
 
     private:
-        std::shared_ptr<rviz_rendering::Arrow> _arrow;
-        Ogre::Vector3 _arrow_position;
+        int _currentLabelType;
+        bool _lastSaved;
+        std::string _currentFloor;
+        std::vector<std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>> _obstacles;
+        std::vector<std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>> _features;
+        std::vector<std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>> _destinations;
         std::shared_ptr<rviz_rendering::ViewportProjectionFinder> _projection_finder;
-        enum State
-        {
-            Position,
-            Orientation
-        };
-        State _state;
-        double _angle;
 
+        rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr _labelTypeSub;
+        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _labelNameSub;
+        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _floorSub;
+
+        rclcpp::Publisher<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _obsPub;
+        rclcpp::Publisher<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _featPub;
+        rclcpp::Publisher<roomba_msgs::msg::MultifloorPoint>::SharedPtr _destPub;
+
+        visualization_msgs::msg::MarkerArray _nameMarkerArray;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _nameMarkerPub;
     };
 
 } // namespace roomba_rviz_plugins

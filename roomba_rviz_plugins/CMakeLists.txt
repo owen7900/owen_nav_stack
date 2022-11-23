@@ -22,6 +22,7 @@ find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(roomba_msgs REQUIRED)
 
 set(roomba_rviz_plugins_headers_to_moc
         include/roomba_rviz_plugins/terrain_labelling_panel.hpp
@@ -42,6 +43,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
         geometry_msgs
+        visualization_msgs
         pluginlib
         Qt5
         rclcpp
@@ -52,6 +54,7 @@ set(dependencies
         rviz_rendering
         std_msgs
         tf2_geometry_msgs
+        roomba_msgs
         )
 
 ament_target_dependencies(${library_name}
@@ -108,6 +111,7 @@ ament_export_dependencies(
         geometry_msgs
         map_msgs
         rclcpp
+        roomba_msgs
 )
 
 ament_package()
