@@ -8,7 +8,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 import xacro
 def generate_launch_description():
 
-  use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+  # use_sim_time = LaunchConfiguration('use_sim_time', default='true')
   urdf_file_name = 'urdf/create_2.urdf.xacro'
 
 
@@ -22,11 +22,11 @@ def generate_launch_description():
   print("urdf_file_name : {}".format(urdf_file_name))
   xml = xacro.process_file(urdf).toprettyxml(indent='   ')
   return LaunchDescription([
-
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='true',
-            description='Use simulation/Gazebo clock'),
+        #
+        # DeclareLaunchArgument(
+        #     'use_sim_time',
+        #     default_value='true',
+        #     description='Use simulation/Gazebo clock'),
 
         SetEnvironmentVariable(name='GAZEBO_MODEL_PATH',value=create_desc+"/../"),
 
@@ -39,7 +39,7 @@ def generate_launch_description():
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
+            parameters=[
                 {'robot_description': xml}]
         ),
 

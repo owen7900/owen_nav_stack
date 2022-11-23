@@ -76,11 +76,11 @@ def generate_launch_description():
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
-        # navigation_launch,
-        # slam_launch,
+        simulation_launch,
+        slam_launch,
         system_controller,
         create_launch,
-        simulation_launch,
+        navigation_launch,
         localization_launch,
         lidar_node
         ])
