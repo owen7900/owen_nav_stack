@@ -33,34 +33,38 @@ public:
   ElevatorTraverser(const std::string& name);
 
 private:
-  rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID& uuid,
-                                          std::shared_ptr<const TraverseElevator::Goal> goal);
-  rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleTraverseElevator> goal_handle);
-  void handle_accepted(const std::shared_ptr<GoalHandleTraverseElevator> goal_handle);
+  rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID& uuid,
+                                         std::shared_ptr<const TraverseElevator::Goal> goal);
+  rclcpp_action::CancelResponse handleCancel(const std::shared_ptr<GoalHandleTraverseElevator> goal_handle);
+  void handleAccepted(const std::shared_ptr<GoalHandleTraverseElevator> goal_handle);
 
-  void tag_detection_callback(const apriltag_msgs::msg::AprilTagDetectionArray::ConstSharedPtr msgs);
+  void tagDetectionCallback(const apriltag_msgs::msg::AprilTagDetectionArray::ConstSharedPtr msgs);
 
   void execute();
   void reset();
 
-  bool rotate_to_face_door();
-  bool initialize_traversal();
-  bool exit_elevator();
+  bool rotateToFaceDoor();
+  bool initializeTraversal();
+  bool exitElevator();
 
   // returns true if aligned with tag
-  bool align_to_tag(int32_t id);
-  bool can_see_tag(int32_t id);
+  bool alignToTag(int32_t id);
+  bool canSeeTag(int32_t id);
 
 private:
-  rclcpp_action::Server<TraverseElevator>::SharedPtr action_server_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
-  rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_sub_;
-  std::shared_ptr<GoalHandleTraverseElevator> goal_handle_;
-  apriltag_msgs::msg::AprilTagDetectionArray::ConstSharedPtr detections_;
+  rclcpp_action::Server<TraverseElevator>::SharedPtr _actionServer;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmdVelPub;
+  rclcpp::Subscription<apriltag_msgs::msg::AprilTagDetectionArray>::SharedPtr _tagSub;
+  std::shared_ptr<GoalHandleTraverseElevator> _goalHandle;
+  apriltag_msgs::msg::AprilTagDetectionArray::ConstSharedPtr _detections;
 
-  rclcpp::TimerBase::SharedPtr timer;
+  rclcpp::TimerBase::SharedPtr _timer;
 
-  TraversalState state;
-  Configuration config;
-  TraversalStatus status;
+  TraversalState _state;
+  Configuration _config;
+  TraversalStatus _status;
+
+  double _kAngle;
+  double _kDistance;
+  double _goalTolerance;
 };
