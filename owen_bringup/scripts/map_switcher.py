@@ -40,7 +40,7 @@ def floor_callback(msg):
         print("RUN DONE")
 
 
-floor_sub = node.create_subscription(String, '/floor_id', floor_callback, 1)
+floor_sub = node.create_subscription(String, '/floor', floor_callback, 1)
 current_loaded_floor = ""
 slam_params_file = "" 
 ls = LaunchService()
