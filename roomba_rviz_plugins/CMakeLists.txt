@@ -20,8 +20,10 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(roomba_msgs REQUIRED)
 
 set(roomba_rviz_plugins_headers_to_moc
@@ -53,8 +55,10 @@ set(dependencies
         rviz_ogre_vendor
         rviz_rendering
         std_msgs
+        std_srvs
         tf2_geometry_msgs
         roomba_msgs
+        yaml-cpp
         )
 
 ament_target_dependencies(${library_name}
@@ -68,6 +72,7 @@ target_include_directories(${library_name} PUBLIC
 
 target_link_libraries(${library_name}
         rviz_common::rviz_common
+        yaml-cpp
         )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -110,6 +115,7 @@ ament_export_dependencies(
         rviz_common
         geometry_msgs
         map_msgs
+        std_srvs
         rclcpp
         roomba_msgs
 )

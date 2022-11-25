@@ -10,6 +10,10 @@
 #include <QLabel>
 #include <QFrame>
 
+#include <fstream>
+#include <string>
+#include <yaml-cpp/yaml.h>
+
 #include "roomba_rviz_plugins/constants.hpp"
 
 #include "rviz_common/display_context.hpp"
@@ -37,13 +41,16 @@ namespace roomba_rviz_plugins{
         _addLabelButton->setText("Add label");
         connect(_addLabelButton, SIGNAL(clicked()), this, SLOT(AddLabel()));
 
+        _outputPath = new QLineEdit();
+        _outputPath->setPlaceholderText("Output file path");
+
         _saveButton = new QPushButton(this);
         _saveButton->setText("Save labels to file");
         connect(_saveButton, SIGNAL(clicked()), this, SLOT(SaveFeatures()));
 
         _clearButton = new QPushButton(this);
         _clearButton->setText("Clear all labels");
-        connect(_saveButton, SIGNAL(clicked()), this, SLOT(ClearFeatures()));
+        connect(_clearButton, SIGNAL(clicked()), this, SLOT(ClearFeatures()));
 
         _labelType = new QLabel(this);
         _labelType->setText("Select label type: ");
@@ -65,6 +72,7 @@ namespace roomba_rviz_plugins{
         _hbox2->addWidget(_label);
         _hbox2->addWidget(_addLabelButton);
 
+        _hbox3->addWidget(_outputPath);
         _hbox3->addWidget(_saveButton);
         _hbox3->addWidget(_clearButton);
 
@@ -83,6 +91,7 @@ namespace roomba_rviz_plugins{
         auto context = this->getDisplayContext();
         auto lock = context->getRosNodeAbstraction().lock();
         auto raw_node = lock->get_raw_node();
+
         _labelTypePub = raw_node->create_publisher<std_msgs::msg::Int64>("/labelType", 10);
         _labelNamePub = raw_node->create_publisher<std_msgs::msg::String>("/labelName", 10);
 
@@ -103,6 +112,8 @@ namespace roomba_rviz_plugins{
                                                                                       std::bind(
                                                                                               &TerrainLabelling::destinationCallback,
                                                                                               this, std::placeholders::_1));
+
+        _clearLabelsClient = raw_node->create_client<std_srvs::srv::Empty>("clearLabels");
     }
 
     TerrainLabelling::~TerrainLabelling() noexcept {}
@@ -143,26 +154,54 @@ namespace roomba_rviz_plugins{
     }
 
     void TerrainLabelling::SaveFeatures() {
-        std::cout << "Obstacles" << std::endl;
+        auto outputPath = _outputPath->text().toStdString();
+        YAML::Node node;
+
+        node["no_pass"] = std::vector<std::string>();
+        node["obstacles"];
         for(const auto &obs : _obstacles){
-            std::cout << "label: " << obs.label.data << ", p1x: " << obs.p1.x << ", p1y: " << obs.p1.y << ", p2x: " << obs.p2.x << ", p2y: " << obs.p2.y << ", floor: " << obs.floor_id.data << std::endl;
+            node["no pass"].push_back(obs.label.data);
+            node["obstacles"][obs.label.data];
+            node["obstacles"][obs.label.data]["xmin"] = obs.p1.x;
+            node["obstacles"][obs.label.data]["ymin"] = obs.p1.y;
+            node["obstacles"][obs.label.data]["xmax"] = obs.p2.x;
+            node["obstacles"][obs.label.data]["ymax"] = obs.p2.y;
+            node["obstacles"][obs.label.data]["floor"] = obs.floor_id.data;
         }
-        std::cout << "Features" << std::endl;
+
+        node["features"];
         for(const auto &feat : _features){
-            std::cout << "label: " << feat.label.data << ", p1x: " << feat.p1.x << ", p1y: " << feat.p1.y << ", p2x: " << feat.p2.x << ", p2y: " << feat.p2.y << ", floor: " << feat.floor_id.data << std::endl;
+            node["features"][feat.label.data];
+            node["features"][feat.label.data]["xmin"] = feat.p1.x;
+            node["features"][feat.label.data]["ymin"] = feat.p1.y;
+            node["features"][feat.label.data]["xmax"] = feat.p2.x;
+            node["features"][feat.label.data]["ymax"] = feat.p2.y;
+            node["features"][feat.label.data]["floor"] = feat.floor_id.data;
         }
-        std::cout << "Destinations" << std::endl;
+
+        node["destinations"];
         for(const auto &dest : _destinations){
-            std::cout << "label: " << dest.label.data << ", x: " << dest.point.x << ", y: " << dest.point.y << ", floor: " << dest.floor_id.data << std::endl;
+            node["destinations"][dest.label.data];
+            node["destinations"][dest.label.data]["x"] = dest.point.x;
+            node["destinations"][dest.label.data]["y"] = dest.point.y;
+            node["destinations"][dest.label.data]["floor"] = dest.floor_id.data;
         }
-        // Massage drawRect to be in nice yaml output, save file somewhere nice
+
+        const auto output = YAML::Dump(node);
+        std::ofstream out(outputPath);
+        out << output;
+        out.close();
+
+        _outputPath->clear();
     }
 
     void TerrainLabelling::ClearFeatures() {
-        //_obstacles.clear();
-        //_features.clear();
-        //_destinations.clear();
-        // call tool clear service to clear drawRect from screen
+        _obstacles.clear();
+        _features.clear();
+        _destinations.clear();
+
+        auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+        _clearLabelsClient->async_send_request(request);
     }
 
 } // namespace roomba_rviz_plugins

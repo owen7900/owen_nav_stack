@@ -28,6 +28,7 @@
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "roomba_msgs/msg/multifloor_rectangle.hpp"
 #include "roomba_msgs/msg/multifloor_point.hpp"
+#include "std_srvs/srv/empty.hpp"
 
 
 namespace roomba_rviz_plugins{
@@ -65,6 +66,7 @@ protected:
     QRadioButton * _featureRB;
     QRadioButton * _destinationRB;
 
+    QLineEdit * _outputPath;
     QPushButton * _saveButton;
     QPushButton * _clearButton;
 
@@ -73,13 +75,18 @@ protected:
 
 private:
     int _currentLabelType;
-    roomba_msgs::msg::MultifloorRectangle _shapeBuffer;
     std::vector<roomba_msgs::msg::MultifloorRectangle> _obstacles;
     std::vector<roomba_msgs::msg::MultifloorRectangle> _features;
     std::vector<roomba_msgs::msg::MultifloorPoint> _destinations;
 
+
+    rclcpp::Client<std_srvs::srv::Empty>::SharedPtr _clearLabelsClient;
+
+    // TODO: make this a service client
     rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr _labelTypePub;
+    // TODO: make this a service client
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _labelNamePub;
+    // TODO: make these each a service (addObs, addFeat, addDest)
     rclcpp::Subscription<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _obsSub;
     rclcpp::Subscription<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _featSub;
     rclcpp::Subscription<roomba_msgs::msg::MultifloorPoint>::SharedPtr _destSub;

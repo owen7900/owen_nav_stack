@@ -35,6 +35,7 @@ namespace roomba_rviz_plugins {
         setName("Terrain Labelling");
 
         auto raw_node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
         _labelTypeSub = raw_node->create_subscription<std_msgs::msg::Int64>("/labelType",
                                                                             10,
                                                                             std::bind(
@@ -58,6 +59,12 @@ namespace roomba_rviz_plugins {
         _destPub = raw_node->create_publisher<roomba_msgs::msg::MultifloorPoint>("/destinations", 10);
 
         _nameMarkerPub = raw_node->create_publisher<visualization_msgs::msg::MarkerArray>("/visualization_marker_array", 10);
+
+
+        _clearLabelsService = raw_node->create_service<std_srvs::srv::Empty>("clearLabels", std::bind(&TerrainLabellingTool::clearLabels,
+                                                                                                      this,
+                                                                                                      std::placeholders::_1,
+                                                                                                      std::placeholders::_2));
     }
 
     void TerrainLabellingTool::activate() {}
@@ -81,15 +88,12 @@ namespace roomba_rviz_plugins {
         if(!_lastSaved){
             switch(_currentLabelType){
                 case CONSTANTS::OBSTACLE:
-                    _obstacles.back().first->getRootNode()->setVisible(false);
                     _obstacles.pop_back();
                     break;
                 case CONSTANTS::FEATURE:
-                    _features.back().first->getRootNode()->setVisible(false);
                     _features.pop_back();
                     break;
                 case CONSTANTS::DESTINATION:
-                    _destinations.back().first->getRootNode()->setVisible(false);
                     _destinations.pop_back();
                     break;
             }
@@ -153,15 +157,12 @@ namespace roomba_rviz_plugins {
         if(!_lastSaved){
             switch(_currentLabelType){
                 case CONSTANTS::OBSTACLE:
-                    _obstacles.back().first->getRootNode()->setVisible(false);
                     _obstacles.pop_back();
                     break;
                 case CONSTANTS::FEATURE:
-                    _features.back().first->getRootNode()->setVisible(false);
                     _features.pop_back();
                     break;
                 case CONSTANTS::DESTINATION:
-                    _destinations.back().first->getRootNode()->setVisible(false);
                     _destinations.pop_back();
                     break;
             }
@@ -302,6 +303,29 @@ namespace roomba_rviz_plugins {
         _destinations.push_back(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>(rect, Ogre::Vector3()));
 
         _lastSaved = false;
+    }
+
+    void TerrainLabellingTool::clearLabels(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                                           std::shared_ptr<std_srvs::srv::Empty::Response> response) {
+        for (auto &obs : _obstacles){
+            obs.first->getRootNode()->setVisible(false);
+        }
+        _obstacles.clear();
+
+        for (auto &feat : _features){
+            feat.first->getRootNode()->setVisible(false);
+        }
+        _features.clear();
+
+        for (auto &dest : _destinations){
+            dest.first->getRootNode()->setVisible(false);
+        }
+        _destinations.clear();
+
+        for(auto &marker : _nameMarkerArray.markers){
+            marker.action = visualization_msgs::msg::Marker::DELETE;
+        }
+        _nameMarkerPub->publish(_nameMarkerArray);
     }
 }
 

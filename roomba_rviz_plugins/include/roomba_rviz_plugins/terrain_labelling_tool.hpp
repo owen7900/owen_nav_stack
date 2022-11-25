@@ -18,6 +18,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int64.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_srvs/srv/empty.hpp"
 
 #include "rviz_common/tool.hpp"
 #include "rviz_rendering/viewport_projection_finder.hpp"
@@ -56,6 +57,8 @@ namespace roomba_rviz_plugins{
         void createFeatureRect(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
         void createDestinationRect(const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
         void drawRect(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3> &pair, const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
+        void clearLabels(std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                         std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
     private:
         int _currentLabelType;
@@ -66,13 +69,19 @@ namespace roomba_rviz_plugins{
         std::vector<std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>> _destinations;
         std::shared_ptr<rviz_rendering::ViewportProjectionFinder> _projection_finder;
 
+        // TODO: Make this a service
         rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr _labelTypeSub;
+        // TODO Make this a service
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _labelNameSub;
+
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _floorSub;
 
+        // TODO: Make these service clients (addObs, addFeat, addDest)
         rclcpp::Publisher<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _obsPub;
         rclcpp::Publisher<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _featPub;
         rclcpp::Publisher<roomba_msgs::msg::MultifloorPoint>::SharedPtr _destPub;
+
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr _clearLabelsService;
 
         visualization_msgs::msg::MarkerArray _nameMarkerArray;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _nameMarkerPub;
