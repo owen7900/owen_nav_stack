@@ -1,0 +1,13 @@
+#Request 
+std_msgs/String target_floor
+---
+#Result 
+bool success
+std_msgs/String arrived_floor
+---
+#Feedback
+uint8 stage
+uint8 ENTERING_ELEVATOR = 1
+uint8 IN_ELEVATOR = 2
+uint8 EXITING_ELEVATOR = 3
+uint8 SEARCHING_FOR_ELEVATOR = 4

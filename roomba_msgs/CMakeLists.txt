@@ -15,7 +15,11 @@ set(msg_files
   msg/MultifloorRectangle.msg
   msg/MultifloorPath.msg
   msg/UpcomingTerrainFeature.msg
+  msg/StringArray.msg
   srv/GetPathObstacles.srv
+  srv/CanContinue.srv
+  srv/GetElevatorPosition.srv
+  action/TraverseElevator.action
 )
 
 rosidl_generate_interfaces(
@@ -23,6 +27,6 @@ rosidl_generate_interfaces(
   ${msg_files}
   DEPENDENCIES std_msgs geometry_msgs)
 
-ament_export_dependencies(rosidl_default_runtime std_msgs)
+ament_export_dependencies(rosidl_default_runtime std_msgs geometry_msgs)
 ament_package()
 
