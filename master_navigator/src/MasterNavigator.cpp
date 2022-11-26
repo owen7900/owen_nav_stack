@@ -180,7 +180,7 @@ void MasterNavigator::handle_navigation_success()
     else
     {
       NavigateClientT::Goal goal;
-      goal.pose.header.frame_id = "/map";
+      goal.pose.header.frame_id = "map";
       goal.pose.header.stamp = this->get_clock()->now();
       goal.pose.pose.position = path.points[path_idx].point;
       this->navigate_to_goal(goal);
@@ -207,7 +207,7 @@ void MasterNavigator::elevator_result_callback(
     case rclcpp_action::ResultCode::SUCCEEDED: {
       state = NavigationState::NavigateToPoint;
       NavigateClientT::Goal goal;
-      goal.pose.header.frame_id = "/map";
+      goal.pose.header.frame_id = "map";
       goal.pose.header.stamp = this->get_clock()->now();
       goal.pose.pose.position = path.points[path_idx].point;
       this->navigate_to_goal(goal);
