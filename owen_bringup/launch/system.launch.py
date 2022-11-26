@@ -89,7 +89,6 @@ def main(argv = sys.argv[1:]):
         print("EXPLORING")
         ld.add_entity(explore_launch)
 
-
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return ls.run()
