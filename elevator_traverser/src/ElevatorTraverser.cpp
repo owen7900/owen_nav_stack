@@ -20,6 +20,8 @@ ElevatorTraverser::ElevatorTraverser(const std::string& name) : rclcpp::Node(nam
   this->get_parameter("k_distance", this->_kDistance);
   this->declare_parameter("goal_tolerance", 0.1);
   this->get_parameter("goal_tolerance", this->_goalTolerance);
+  this->declare_parameter("exit_duration", 3.0);
+  this->get_parameter("exit_duration", this->_exitTraversalDuration);
 
   this->_actionServer = rclcpp_action::create_server<TraverseElevator>(
       this, "traverse_elevator",
@@ -118,7 +120,7 @@ void ElevatorTraverser::execute()
       break;
 
     case TraversalState::RotateToFaceDoor:
-      if (this->rotateToFaceDoor())
+      if (this->rotateToFaceDoor(this->_config.GetElevatorFromDoorTag(this->_status.door_id).doorId))
       {
         std::cout << "Transition to wait for door close" << std::endl;
         this->_state = TraversalState::WaitForDoorToClose;
@@ -134,8 +136,16 @@ void ElevatorTraverser::execute()
     case TraversalState::WaitForDoorToOpen:
       if (!this->canSeeTag(this->_config.GetElevatorFromDoorTag(this->_status.door_id).doorId))
       {
+        std::cout << "Transition to line up with exit" << std::endl;
+        this->_state = TraversalState::LineUpWithExit;
+      }
+      break;
+    case TraversalState::LineUpWithExit:
+      if (this->lineUpWithExit())
+      {
         std::cout << "Transition to exit elevator" << std::endl;
         this->_state = TraversalState::ExitElevator;
+        this->_exitStartTime = this->get_clock()->now().seconds();
       }
       break;
     case TraversalState::ExitElevator:
@@ -179,9 +189,91 @@ bool ElevatorTraverser::initializeTraversal()
   return true;
 }
 
+bool ElevatorTraverser::lineUpWithExit()
+{
+  geometry_msgs::msg::Twist msg;
+  if (!this->_detections)
+  {
+    this->_cmdVelPub->publish(msg);
+    return false;
+  }
+  std::vector<int32_t> visibleDoorTags;
+  const auto& elevator = this->_config.GetElevatorFromDoorTag(this->_status.door_id);
+  for (const auto& det : this->_detections->detections)
+  {
+    if (elevator.floorTagIds.count(det.id) > 0)
+    {
+      if (elevator.floorTagIds.at(det.id) != this->_goalHandle->get_goal()->target_floor.data)
+      {
+        RCLCPP_ERROR_STREAM(this->get_logger(), "ON WRONG FLOOR: " << elevator.floorTagIds.at(det.id));
+        this->_cmdVelPub->publish(msg);
+        return false;
+      }
+      visibleDoorTags.push_back(det.id);
+    }
+  }
+
+  if (visibleDoorTags.empty())
+  {
+    RCLCPP_WARN(this->get_logger(), "Cannot see any outside tags");
+    this->_cmdVelPub->publish(msg);
+    return false;
+  }
+  else if (visibleDoorTags.size() > 2)
+  {
+    RCLCPP_ERROR_STREAM(this->get_logger(), "Can see " << visibleDoorTags.size() << " HOW CAN I SEE MORE THAN 2???");
+    this->_cmdVelPub->publish(msg);
+  }
+  else if (visibleDoorTags.size() == 1)
+  {
+    RCLCPP_WARN(this->get_logger(), "Can only see 1 door tag, this might be a problem");
+    this->_cmdVelPub->publish(msg);
+  }
+
+  const auto diff0 = this->getTagDistanceAndAngleOffset(visibleDoorTags[0]);
+  const auto diff1 = this->getTagDistanceAndAngleOffset(visibleDoorTags[1]);
+  const double targetAngle = (diff0.second + diff1.second) / 2.0;
+  msg.angular.z = targetAngle * this->_kAngle;
+  this->_cmdVelPub->publish(msg);
+
+  return targetAngle < 0.1;
+}
+
 bool ElevatorTraverser::exitElevator()
 {
-  return true;
+  geometry_msgs::msg::Twist cmd;
+  if (this->get_clock()->now().seconds() - this->_exitStartTime < this->_exitTraversalDuration)
+  {
+    cmd.linear.x = 0.1;
+  }
+  else
+  {
+    cmd.linear.x = 0.0;
+  }
+
+  this->_cmdVelPub->publish(cmd);
+
+  return this->get_clock()->now().seconds() - this->_exitStartTime > this->_exitTraversalDuration;
+}
+
+std::pair<double, double> ElevatorTraverser::getTagDistanceAndAngleOffset(const int32_t id) const
+{
+  geometry_msgs::msg::TransformStamped t;
+  const std::string tagFrame = "tag36h11:" + std::to_string(id);
+  try
+  {
+    t = this->_tfBuffer->lookupTransform("base_footprint", tagFrame, tf2::TimePointZero);
+  }
+  catch (tf2::TransformException& e)
+  {
+    RCLCPP_WARN_STREAM(this->get_logger(), "Failed to get transform to " << tagFrame << " error: " << e.what());
+    return {};
+  }
+  const double diffPos = std::pow(t.transform.translation.x, 2) + std::pow(t.transform.translation.y, 2);
+
+  const double diffAngle = std::atan2(t.transform.translation.y, t.transform.translation.x);
+
+  return { diffPos, diffAngle };
 }
 
 bool ElevatorTraverser::alignToTag(int32_t id)
@@ -193,35 +285,42 @@ bool ElevatorTraverser::alignToTag(int32_t id)
     this->_cmdVelPub->publish(cmd);
     return false;
   }
-  geometry_msgs::msg::TransformStamped t;
-  const std::string tagFrame = "tag36h11:" + std::to_string(id);
 
-  try
-  {
-    t = this->_tfBuffer->lookupTransform("base_footprint", tagFrame, tf2::TimePointZero);
-  }
-  catch (tf2::TransformException& e)
-  {
-    RCLCPP_WARN_STREAM(this->get_logger(), "Failed to get transform to " << tagFrame << " error: " << e.what());
-    return false;
-  }
-  const double diffPos = std::pow(t.transform.translation.x, 2) + std::pow(t.transform.translation.y, 2);
-
-  const double diffAngle = std::atan2(t.transform.translation.y, t.transform.translation.x);
-
-  cmd.linear.x = diffPos * (diffPos > this->_goalTolerance ? this->_kDistance : 0.0);
-  cmd.angular.z = diffAngle * this->_kAngle * (cmd.linear.x >= 0 ? 1.0 : -1.0);
+  const auto diff = this->getTagDistanceAndAngleOffset(id);
+  cmd.linear.x = diff.first * (diff.first > this->_goalTolerance ? this->_kDistance : 0.0);
+  cmd.angular.z = diff.second * this->_kAngle * (cmd.linear.x >= 0 ? 1.0 : -1.0);
   this->_cmdVelPub->publish(cmd);
 
-  RCLCPP_INFO_STREAM(this->get_logger(), "Delta P: " << diffPos << " A: " << diffAngle << " Sending: " << cmd.linear.x
-                                                     << ", " << cmd.angular.z);
+  RCLCPP_INFO_STREAM(this->get_logger(), "Delta P: " << diff.first << " A: " << diff.second
+                                                     << " Sending: " << cmd.linear.x << ", " << cmd.angular.z);
 
-  return diffPos < this->_goalTolerance;
+  return diff.first < this->_goalTolerance;
 }
 
-bool ElevatorTraverser::rotateToFaceDoor()
+bool ElevatorTraverser::rotateToFaceDoor(int32_t id)
 {
-  return true;
+  geometry_msgs::msg::Twist msg;
+
+  if (!this->canSeeTag(id))
+  {
+    msg.angular.z = 0.2;
+    this->_cmdVelPub->publish(msg);
+    return false;
+  }
+
+  const auto diff = this->getTagDistanceAndAngleOffset(id);
+  if (diff.second < 0.1)
+  {
+    msg.angular.z = 0.0;
+    this->_cmdVelPub->publish(msg);
+    return true;
+  }
+  else
+  {
+    msg.angular.z = 0.2;
+    this->_cmdVelPub->publish(msg);
+    return false;
+  }
 }
 
 bool ElevatorTraverser::canSeeTag(int32_t id)

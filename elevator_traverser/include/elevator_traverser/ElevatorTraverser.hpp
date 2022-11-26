@@ -19,6 +19,7 @@ enum class TraversalState
   RotateToFaceDoor,
   WaitForDoorToClose,
   WaitForDoorToOpen,
+  LineUpWithExit,
   ExitElevator
 };
 
@@ -45,13 +46,16 @@ private:
   void execute();
   void reset();
 
-  bool rotateToFaceDoor();
   bool initializeTraversal();
+  bool lineUpWithExit();
   bool exitElevator();
+
+  std::pair<double, double> getTagDistanceAndAngleOffset(const int32_t tagId) const;
 
   // returns true if aligned with tag
   bool alignToTag(int32_t id);
   bool canSeeTag(int32_t id);
+  bool rotateToFaceDoor(int32_t id);
 
 private:
   rclcpp_action::Server<TraverseElevator>::SharedPtr _actionServer;
@@ -69,6 +73,9 @@ private:
   double _kAngle;
   double _kDistance;
   double _goalTolerance;
+  double _exitTraversalDuration;
   std::shared_ptr<tf2_ros::TransformListener> _transformListener;
   std::unique_ptr<tf2_ros::Buffer> _tfBuffer;
+
+  double _exitStartTime;
 };
