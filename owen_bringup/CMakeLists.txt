@@ -25,9 +25,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(DIRECTORY scripts
+install(FILES scripts/map_switcher.py
   DESTINATION lib/${PROJECT_NAME}
-  PATTERN ".svn" EXCLUDE
   )
 
 install(DIRECTORY config launch
