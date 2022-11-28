@@ -1,5 +1,5 @@
 1:
-  connections: [{id: 2, cost: 20.0}]
+  connections: [{id: 2, cost: 20.0}, {id: 5, cost: 11.0}]
   floor_id: "1"
   x: 0.0
   y: 0.0
@@ -26,4 +26,4 @@
   connections: [{id: 2, cost: 11.0}]
   floor_id: "1"
   x: 3.0
-  y: 6.0
+  y: 3.0

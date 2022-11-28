@@ -354,6 +354,7 @@ void ExpandToGoal::goalCallback(geometry_msgs::msg::PoseStamped::UniquePtr msg)
     layered_costmap_->resizeMap(newSizeX, newSizeY, costMap->getResolution(), newOriginX, newOriginY);
   }
 }
+
 void ExpandToGoal::updateBounds(
 
     double /*robot_x*/, double /* robot_y*/, double /*robot_yaw*/, double* min_x, double* min_y, double* max_x,

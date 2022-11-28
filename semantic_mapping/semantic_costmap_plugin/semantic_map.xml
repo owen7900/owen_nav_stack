@@ -1,0 +1,5 @@
+<library path="semantic_costmap_plugin">
+    <class name="semantic_costmap_plugin::SemanticMap" type="semantic_costmap_plugin::SemanticMap" base_class_type="nav2_costmap_2d::Layer">
+        <description>This is plugin that will add manually labelled map features</description>
+    </class>
+</library>

@@ -17,8 +17,11 @@ set(msg_files
   msg/UpcomingTerrainFeature.msg
   msg/StringArray.msg
   srv/GetPathObstacles.srv
+  srv/GetAvailableDestinations.srv
   srv/CanContinue.srv
   srv/GetElevatorPosition.srv
+        srv/LoadConfig.srv
+  srv/AddMapNode.srv
   action/TraverseElevator.action
 )
 

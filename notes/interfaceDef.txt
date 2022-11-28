@@ -16,4 +16,3 @@ GetPathObstacles Path-{String(feature), {String(floor_id), Rectangle(bounds)}} S
 
 OTHER
 MapPlugin for impassible/passible locations
-
