@@ -29,18 +29,14 @@ void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
 
   for (const auto& n : top)
   {
-    int id = n.first.as<int>();
-    if (map_nodes.count(id) > 0)
-    {
-      RCLCPP_WARN(node->get_logger(), "Got duplicate node id %d", id);
-      continue;
-    }
-
+    const int id = n.first.as<int>();
     map_nodes[id].node_id = id;
+
     for (const auto& conn : n.second["connections"])
     {
-      map_nodes[id].connections.push_back({ conn["id"].as<int>(), conn["cost"].as<double>() });
-      map_nodes[conn["id"].as<int>()].connections.push_back({ id, conn["cost"].as<double>() });
+      const int connId = conn["id"].as<int>();
+      map_nodes[id].connections.push_back({ connId, conn["cost"].as<double>() });
+      map_nodes[connId].connections.push_back({ id, conn["cost"].as<double>() });
     }
 
     map_nodes[id].point.floor_id.data = n.second["floor_id"].as<std::string>();
