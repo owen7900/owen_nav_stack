@@ -215,13 +215,13 @@ namespace roomba_rviz_plugins {
             response->node_pos.point.x = lastNode->getPosition().x;
             response->node_pos.point.y = lastNode->getPosition().y;
             response->node_pos.floor_id.data = _currentFloor;
-            response->node_pos.label = request->node_name;
+            response->node_pos.label.data = _currentFloor + request->node_name.data;
             _lastSaved = true;
 
             visualization_msgs::msg::Marker marker_msg;
             marker_msg.header.frame_id = "/map";
             marker_msg.id = ++_markerCount;
-            marker_msg.text = request->node_name.data;
+            marker_msg.text = response->node_pos.label.data;
             marker_msg.color.a = 1.0f;
             marker_msg.color.r = 1.0f;
             marker_msg.color.g = 1.0f;
