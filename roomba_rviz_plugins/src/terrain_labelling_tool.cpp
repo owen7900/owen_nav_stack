@@ -13,6 +13,8 @@
 #include <OgreSceneNode.h>
 #include <OgreViewport.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include "rviz_rendering/geometry.hpp"
 #include "rviz_rendering/objects/shape.hpp"
 #include "rviz_rendering/render_window.hpp"
@@ -62,6 +64,11 @@ namespace roomba_rviz_plugins {
 
 
         _clearLabelsService = raw_node->create_service<std_srvs::srv::Empty>("clearLabels", std::bind(&TerrainLabellingTool::clearLabels,
+                                                                                                      this,
+                                                                                                      std::placeholders::_1,
+                                                                                                      std::placeholders::_2));
+
+        _loadConfigService = raw_node->create_service<roomba_msgs::srv::LoadConfig>("loadConfig", std::bind(&TerrainLabellingTool::loadConfig,
                                                                                                       this,
                                                                                                       std::placeholders::_1,
                                                                                                       std::placeholders::_2));
@@ -326,6 +333,159 @@ namespace roomba_rviz_plugins {
             marker.action = visualization_msgs::msg::Marker::DELETE;
         }
         _nameMarkerPub->publish(_nameMarkerArray);
+    }
+
+
+    void TerrainLabellingTool::loadConfig(std::shared_ptr<roomba_msgs::srv::LoadConfig::Request> request,
+                                          std::shared_ptr<roomba_msgs::srv::LoadConfig::Response> response){
+        auto configPath = request->path.data;
+        YAML::Node top = YAML::LoadFile(configPath);
+
+        auto obstacles = top["obstacles"];
+        for(const auto &obstacle : obstacles){
+            auto vals = obstacle.second;
+
+            auto xmin = vals["xmin"].as<double>();
+            auto xmax = vals["xmax"].as<double>();
+            auto ymin = vals["ymin"].as<double>();
+            auto ymax = vals["ymax"].as<double>();
+            auto floor = vals["floor"].as<std::string>();
+            auto label = obstacle.first.as<std::string>();
+
+            auto rect = std::make_shared<rviz_rendering::Shape>(rviz_rendering::Shape::Type::Cube, scene_manager_, nullptr);
+            rect->setColor(1.0f, 0.0f, 0.0f, 1.0f);
+            rect->getRootNode()->setVisible(false);
+            rect->setPosition(Ogre::Vector3(xmin, ymin, 0.0001));
+            _obstacles.push_back(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>(rect, Ogre::Vector3()));
+
+            auto diffx = xmax - xmin;
+            auto diffy = ymax - ymin;
+            auto size = Ogre::Vector3(diffx, diffy, 0.0001);
+            rect->setScale(size);
+
+            rect->setPosition(Ogre::Vector3(0.5 * diffx + xmin, 0.5 * diffy + ymin, 0.00));
+            rect->getRootNode()->setVisible(true);
+
+            roomba_msgs::msg::MultifloorRectangle message;
+            message.floor_id.data = floor;
+            message.label.data = label;
+            message.p1.x = rect->getPosition().x - 0.5 * size.x;
+            message.p2.x = rect->getPosition().x + 0.5 * size.x;
+            message.p1.y = rect->getPosition().y - 0.5 * size.y;
+            message.p2.y = rect->getPosition().y + 0.5 * size.y;
+            _obsPub->publish(message);
+
+            visualization_msgs::msg::Marker marker_msg;
+            marker_msg.header.frame_id = "/map";
+            marker_msg.id = _nameMarkerArray.markers.size();
+            marker_msg.text = label;
+            marker_msg.color.a = 1.0f;
+            marker_msg.color.r = 1.0f;
+            marker_msg.color.g = 1.0f;
+            marker_msg.color.b = 1.0f;
+            marker_msg.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+            marker_msg.pose.position.x = rect->getPosition().x;
+            marker_msg.pose.position.y = rect->getPosition().y;
+            marker_msg.pose.position.z = 0.2;
+            marker_msg.scale.z = 0.2;
+            _nameMarkerArray.markers.push_back(marker_msg);
+            _nameMarkerPub->publish(_nameMarkerArray);
+        }
+
+        auto features = top["features"];
+        for(const auto &feature : features){
+            auto vals = feature.second;
+
+            auto xmin = vals["xmin"].as<double>();
+            auto xmax = vals["xmax"].as<double>();
+            auto ymin = vals["ymin"].as<double>();
+            auto ymax = vals["ymax"].as<double>();
+            auto floor = vals["floor"].as<std::string>();
+            auto label = feature.first.as<std::string>();
+
+            auto rect = std::make_shared<rviz_rendering::Shape>(rviz_rendering::Shape::Type::Cube, scene_manager_, nullptr);
+            rect->setColor(0.0f, 1.0f, 0.0f, 1.0f);
+            rect->getRootNode()->setVisible(false);
+            rect->setPosition(Ogre::Vector3(xmin, ymin, 0.0001));
+            _features.push_back(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>(rect, Ogre::Vector3()));
+
+            auto diffx = xmax - xmin;
+            auto diffy = ymax - ymin;
+            auto size = Ogre::Vector3(diffx, diffy, 0.0001);
+            rect->setScale(size);
+
+            rect->setPosition(Ogre::Vector3(0.5 * diffx + xmin, 0.5 * diffy + ymin, 0.00));
+            rect->getRootNode()->setVisible(true);
+
+            roomba_msgs::msg::MultifloorRectangle message;
+            message.floor_id.data = floor;
+            message.label.data = label;
+            message.p1.x = rect->getPosition().x - 0.5 * size.x;
+            message.p2.x = rect->getPosition().x + 0.5 * size.x;
+            message.p1.y = rect->getPosition().y - 0.5 * size.y;
+            message.p2.y = rect->getPosition().y + 0.5 * size.y;
+            _featPub->publish(message);
+
+            visualization_msgs::msg::Marker marker_msg;
+            marker_msg.header.frame_id = "/map";
+            marker_msg.id = _nameMarkerArray.markers.size();
+            marker_msg.text = label;
+            marker_msg.color.a = 1.0f;
+            marker_msg.color.r = 1.0f;
+            marker_msg.color.g = 1.0f;
+            marker_msg.color.b = 1.0f;
+            marker_msg.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+            marker_msg.pose.position.x = rect->getPosition().x;
+            marker_msg.pose.position.y = rect->getPosition().y;
+            marker_msg.pose.position.z = 0.2;
+            marker_msg.scale.z = 0.2;
+            _nameMarkerArray.markers.push_back(marker_msg);
+            _nameMarkerPub->publish(_nameMarkerArray);
+        }
+
+        auto destinations = top["destinations"];
+        for(const auto &destination : destinations){
+            auto vals = destination.second;
+
+            double x = vals["x"].as<double>();
+            double y = vals["y"].as<double>();
+            std::string floor = vals["floor"].as<std::string>();
+            auto label = destination.first.as<std::string>();
+
+            auto rect = std::make_shared<rviz_rendering::Shape>(rviz_rendering::Shape::Type::Cube, scene_manager_, nullptr);
+            rect->setColor(0.0f, 1.0f, 0.0f, 1.0f);
+            rect->getRootNode()->setVisible(false);
+            rect->setPosition(Ogre::Vector3(x, y, 0.0001));
+            _destinations.push_back(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3>(rect, Ogre::Vector3()));
+
+            auto size = Ogre::Vector3(0.1, 0.1, 0.0001);
+            rect->setScale(size);
+            rect->getRootNode()->setVisible(true);
+
+            roomba_msgs::msg::MultifloorPoint message;
+            message.floor_id.data = floor;
+            message.label.data = label;
+            message.point.x = rect->getPosition().x;
+            message.point.y = rect->getPosition().y;
+            _destPub->publish(message);
+
+            visualization_msgs::msg::Marker marker_msg;
+            marker_msg.header.frame_id = "/map";
+            marker_msg.id = _nameMarkerArray.markers.size();
+            marker_msg.text = label;
+            marker_msg.color.a = 1.0f;
+            marker_msg.color.r = 1.0f;
+            marker_msg.color.g = 1.0f;
+            marker_msg.color.b = 1.0f;
+            marker_msg.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+            marker_msg.pose.position.x = rect->getPosition().x;
+            marker_msg.pose.position.y = rect->getPosition().y;
+            marker_msg.pose.position.z = 0.2;
+            marker_msg.scale.z = 0.2;
+            _nameMarkerArray.markers.push_back(marker_msg);
+            _nameMarkerPub->publish(_nameMarkerArray);
+        }
+        _lastSaved = true;
     }
 }
 

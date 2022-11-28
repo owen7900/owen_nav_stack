@@ -2,8 +2,6 @@
 // Created by kevin on 10/26/22.
 //
 
-#include "../include/roomba_rviz_plugins/terrain_labelling_panel.hpp"
-
 #include <QPushButton>
 #include <QLineEdit>
 #include <QVBoxLayout>
@@ -17,6 +15,7 @@
 #include "roomba_rviz_plugins/constants.hpp"
 
 #include "rviz_common/display_context.hpp"
+#include "roomba_rviz_plugins/terrain_labelling_panel.hpp"
 
 namespace roomba_rviz_plugins{
     TerrainLabelling::TerrainLabelling(QWidget *parent)
@@ -25,6 +24,7 @@ namespace roomba_rviz_plugins{
         _hbox1 = new QHBoxLayout();
         _hbox2 = new QHBoxLayout();
         _hbox3 = new QHBoxLayout();
+        _hbox4 = new QHBoxLayout();
 
         _line1 = new QFrame();
         _line1->setFrameShape(QFrame::HLine);
@@ -34,12 +34,23 @@ namespace roomba_rviz_plugins{
         _line2->setFrameShape(QFrame::HLine);
         _line2->setFrameShadow(QFrame::Sunken);
 
+        _line3 = new QFrame();
+        _line3->setFrameShape(QFrame::HLine);
+        _line3->setFrameShadow(QFrame::Sunken);
+
         _label = new QLineEdit();
         _label->setPlaceholderText("Label name");
 
         _addLabelButton = new QPushButton(this);
         _addLabelButton->setText("Add label");
         connect(_addLabelButton, SIGNAL(clicked()), this, SLOT(AddLabel()));
+
+        _loadConfigPath = new QLineEdit();
+        _loadConfigPath->setPlaceholderText("Existing config file path");
+
+        _loadConfigButton = new QPushButton(this);
+        _loadConfigButton->setText("Load existing config");
+        connect(_loadConfigButton, SIGNAL(clicked()), this, SLOT(LoadConfig()));
 
         _outputPath = new QLineEdit();
         _outputPath->setPlaceholderText("Output file path");
@@ -72,15 +83,20 @@ namespace roomba_rviz_plugins{
         _hbox2->addWidget(_label);
         _hbox2->addWidget(_addLabelButton);
 
-        _hbox3->addWidget(_outputPath);
-        _hbox3->addWidget(_saveButton);
-        _hbox3->addWidget(_clearButton);
+        _hbox3->addWidget(_loadConfigPath);
+        _hbox3->addWidget(_loadConfigButton);
+
+        _hbox4->addWidget(_outputPath);
+        _hbox4->addWidget(_saveButton);
+        _hbox4->addWidget(_clearButton);
 
         _verticalBox->addLayout(_hbox1);
         _verticalBox->addWidget(_line1);
         _verticalBox->addLayout(_hbox2);
         _verticalBox->addWidget(_line2);
         _verticalBox->addLayout(_hbox3);
+        _verticalBox->addWidget(_line3);
+        _verticalBox->addLayout(_hbox4);
 
         setLayout(_verticalBox);
 
@@ -114,6 +130,7 @@ namespace roomba_rviz_plugins{
                                                                                               this, std::placeholders::_1));
 
         _clearLabelsClient = raw_node->create_client<std_srvs::srv::Empty>("clearLabels");
+        _loadConfigClient = raw_node->create_client<roomba_msgs::srv::LoadConfig>("loadConfig");
     }
 
     TerrainLabelling::~TerrainLabelling() noexcept {}
@@ -202,6 +219,14 @@ namespace roomba_rviz_plugins{
 
         auto request = std::make_shared<std_srvs::srv::Empty::Request>();
         _clearLabelsClient->async_send_request(request);
+    }
+
+    void TerrainLabelling::LoadConfig() {
+        ClearFeatures();
+        auto request = std::make_shared<roomba_msgs::srv::LoadConfig::Request>();
+        request->path.data = _loadConfigPath->text().toStdString();
+        _loadConfigClient->async_send_request(request);
+        _loadConfigPath->clear();
     }
 
 } // namespace roomba_rviz_plugins

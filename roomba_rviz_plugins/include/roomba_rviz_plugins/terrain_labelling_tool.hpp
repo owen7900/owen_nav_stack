@@ -26,6 +26,7 @@
 
 #include "roomba_msgs/msg/multifloor_rectangle.hpp"
 #include "roomba_msgs/msg/multifloor_point.hpp"
+#include "roomba_msgs/srv/load_config.hpp"
 
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
@@ -59,6 +60,8 @@ namespace roomba_rviz_plugins{
         void drawRect(std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3> &pair, const std::pair<bool, Ogre::Vector3> &xy_plane_intersection);
         void clearLabels(std::shared_ptr<std_srvs::srv::Empty::Request> request,
                          std::shared_ptr<std_srvs::srv::Empty::Response> response);
+        void loadConfig(std::shared_ptr<roomba_msgs::srv::LoadConfig::Request> request,
+                        std::shared_ptr<roomba_msgs::srv::LoadConfig::Response> response);
 
     private:
         int _currentLabelType;
@@ -82,6 +85,8 @@ namespace roomba_rviz_plugins{
         rclcpp::Publisher<roomba_msgs::msg::MultifloorPoint>::SharedPtr _destPub;
 
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr _clearLabelsService;
+
+        rclcpp::Service<roomba_msgs::srv::LoadConfig>::SharedPtr _loadConfigService;
 
         visualization_msgs::msg::MarkerArray _nameMarkerArray;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _nameMarkerPub;

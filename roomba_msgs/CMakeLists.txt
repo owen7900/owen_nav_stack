@@ -20,6 +20,8 @@ set(msg_files
   srv/GetAvailableDestinations.srv
   srv/CanContinue.srv
   srv/GetElevatorPosition.srv
+        srv/LoadConfig.srv
+  srv/AddMapNode.srv
   action/TraverseElevator.action
 )
 

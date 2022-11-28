@@ -29,6 +29,9 @@ find_package(roomba_msgs REQUIRED)
 set(roomba_rviz_plugins_headers_to_moc
         include/roomba_rviz_plugins/terrain_labelling_panel.hpp
         include/roomba_rviz_plugins/terrain_labelling_tool.hpp
+        include/roomba_rviz_plugins/map_node_labelling_panel.hpp
+        include/roomba_rviz_plugins/map_node_labelling_tool.hpp
+        include/roomba_rviz_plugins/constants.hpp
         )
 
 include_directories(
@@ -40,6 +43,8 @@ set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
         src/terrain_labelling_panel.cpp
         src/terrain_labelling_tool.cpp
+        src/map_node_labelling_panel.cpp
+        src/map_node_labelling_tool.cpp
         ${roomba_rviz_plugins_headers_to_moc}
         )
 

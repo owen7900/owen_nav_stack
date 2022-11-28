@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-// QT
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -28,6 +27,7 @@
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "roomba_msgs/msg/multifloor_rectangle.hpp"
 #include "roomba_msgs/msg/multifloor_point.hpp"
+#include "roomba_msgs/srv/load_config.hpp"
 #include "std_srvs/srv/empty.hpp"
 
 
@@ -45,6 +45,7 @@ private Q_SLOTS:
     void SaveFeatures();
     void ClearFeatures();
     void AddLabel();
+    void LoadConfig();
 
 private:
     void obstacleCallback(roomba_msgs::msg::MultifloorRectangle msg);
@@ -56,6 +57,7 @@ protected:
     QHBoxLayout * _hbox1;
     QHBoxLayout * _hbox2;
     QHBoxLayout * _hbox3;
+    QHBoxLayout * _hbox4;
 
     QLabel * _labelType;
 
@@ -66,12 +68,16 @@ protected:
     QRadioButton * _featureRB;
     QRadioButton * _destinationRB;
 
+    QLineEdit * _loadConfigPath;
+    QPushButton * _loadConfigButton;
+
     QLineEdit * _outputPath;
     QPushButton * _saveButton;
     QPushButton * _clearButton;
 
     QFrame * _line1;
     QFrame * _line2;
+    QFrame * _line3;
 
 private:
     int _currentLabelType;
@@ -81,6 +87,7 @@ private:
 
 
     rclcpp::Client<std_srvs::srv::Empty>::SharedPtr _clearLabelsClient;
+    rclcpp::Client<roomba_msgs::srv::LoadConfig>::SharedPtr _loadConfigClient;
 
     // TODO: make this a service client
     rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr _labelTypePub;
