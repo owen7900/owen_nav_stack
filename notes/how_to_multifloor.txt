@@ -1,1 +1,1 @@
-Make a custom implementation of the nav2_waypoint_follower that handles elevators and stuff. 
+Make a custom implementation of the nav2_waypoint_follower that handles elevators and drawRect.
