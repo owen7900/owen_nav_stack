@@ -7,10 +7,6 @@
 
 MultifloorPathPlanner::MultifloorPathPlanner(rclcpp::Node::SharedPtr _node) : node(_node)
 {
-  node->declare_parameter("/maps", rclcpp::ParameterType::PARAMETER_STRING_ARRAY);
-  std::vector<std::string> map_names;
-  node->get_parameter("/maps", map_names);
-
   node->declare_parameter("/map_node_file", rclcpp::ParameterType::PARAMETER_STRING);
   std::string map_node_file;
   if (!node->get_parameter("/map_node_file", map_node_file))
