@@ -145,10 +145,6 @@ namespace roomba_rviz_plugins {
             marker_msg.id = ++_markerCount;
             marker_msg.text = node.first.as<std::string>();
 
-            std::cout << "---------------------------------------------------------" << std::endl;
-            std::cout << marker_msg.text << std::endl;
-            std::cout << "---------------------------------------------------------" << std::endl;
-
             marker_msg.color.a = 1.0f;
             marker_msg.color.r = 1.0f;
             marker_msg.color.g = 1.0f;
