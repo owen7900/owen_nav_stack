@@ -19,7 +19,7 @@ slam_toolbox:
     # if you'd like to immediately start continuing a map at a given pose
     # or at the dock, but they are mutually exclusive, if pose is given
     # will use pose
-    map_file_name: /home/owen/maps/qset_room/serialized_qset_room
+    map_file_name: /home/owen/owen_ws/src/nav_stack/maps/ilc_floor2/f2_final
     map_start_pose: [0.0, 0.0, 0.0]
     #map_start_at_dock: true
 

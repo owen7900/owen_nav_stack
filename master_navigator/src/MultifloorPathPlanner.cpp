@@ -40,6 +40,7 @@ void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
     for (const auto& conn : n.second["connections"])
     {
       map_nodes[id].connections.push_back({ conn["id"].as<int>(), conn["cost"].as<double>() });
+      map_nodes[conn["id"].as<int>()].connections.push_back({ id, conn["cost"].as<double>() });
     }
 
     map_nodes[id].point.floor_id.data = n.second["floor_id"].as<std::string>();
