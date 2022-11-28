@@ -168,11 +168,14 @@ namespace roomba_rviz_plugins {
                     continue;
                 }
 
-                currentId.erase(0, 1);
-                conn_id.erase(0, 1);
+                std::string current = currentId;
+                std::string connection = conn_id;
 
-                int currentIdInt = std::stoi(currentId);
-                int connIdInt = std::stoi(conn_id);
+                current.erase(0, 1);
+                connection.erase(0, 1);
+
+                int currentIdInt = std::stoi(current);
+                int connIdInt = std::stoi(connection);
 
                 auto currentNode = _mapNodes[currentIdInt - 1];
                 if (currentNode == nullptr) {
