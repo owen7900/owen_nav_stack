@@ -6,10 +6,13 @@
 ### Progress
 - Lists Rooms by Floor.  
 - Auditorially lists Rooms by Floor.
+- Lists Obstacles in Path
 
 ### Todo
 - Integrate with Roomba
-- List Obstacles in Path
-- List Directions
+- List Directions (Dependant on Roomba integration)
+- Add help menu
+- Enable back button
+- Integrate properly with keyboard
 - Enable speech recognition
 - Make it look nicer

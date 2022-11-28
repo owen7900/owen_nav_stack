@@ -3,48 +3,76 @@ import backend
 from time import sleep
 from gtts import gTTS
 from pygame import mixer
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QToolBar, QToolButton, QMenuBar, QMenu, QAction, QMainWindow
 from PyQt5.QtGui import *
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, QRect, QFile, QTextStream
 from PyQt5 import QtTest
 
 class App(QWidget):
     def __init__(self):
         super().__init__()
-        self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Would you like to go to floor 1, 2, or 3?')
+
+        self.setup()
+        self.sound = True;
+        #self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Would you like to go to floor 1, 2, or 3?')
+
         self.rooms = ['Select']
         self.room_num = None;
-        self.setup()
+        self.dark_mode = True
+
         self.select_floor()
-        self.button.clicked.connect(self.directions)
         self.show()
 
     def setup(self):
-        #self.setStyleSheet("QWidget {background-color: rgb(255, 255, 255);}")
         self.setWindowTitle("Autonomous Building Guide")
-        #self.setMinimumWidth(600)
+        self.setFixedWidth(500)
+
+        with open("dark/stylesheet.qss", "r") as f:
+            content = f.readlines()
+        text = ""
+        for i in content:
+            text += i
+        self.setStyleSheet(text)
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.label = QLabel('Welcome to Beamish Munro Hall.')
+        self.label = QLabel()
 
         self.pic = QLabel()
-        pixmap = QPixmap(os.getcwd() + '/Queens_Logo.jpeg')
+        pixmap = QPixmap(os.getcwd() + '/roomba.png')
         pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio)
         self.pic.setPixmap(pixmap)
 
-        self.layout.addWidget(self.label)
-        #self.layout.addWidget(self.pic)
+        self.backward = QAction()
+        self.backward.setIcon(QIcon('icons/back_white.png'))
+        self.backward.setEnabled(False)
+        self.help = QAction("Help")
+        self.mute = QAction()
+        self.mute.setIcon(QIcon('icons/unmute_white.png'))
+        self.mute.triggered.connect(self.muteSound)
+        self.mode = QAction()
+        self.mode.setIcon(QIcon('icons/moon.png'))
+        self.mode.triggered.connect(self.changeMode)
 
+        self.menuBar = QMenuBar(self)
+        self.menuBar.setNativeMenuBar(False)
+        self.menuBar.addAction(self.backward)
+        self.menuBar.addAction(self.mute)
+        self.menuBar.addAction(self.mode)
+        self.menuBar.addAction(self.help)
+
+        self.layout.setMenuBar(self.menuBar)
+        self.layout.addWidget(self.label)
 
     def audio(self,message):
-        language = 'en'
-        myobj = gTTS(text=message, lang=language, slow=False)
-        myobj.save("message.mp3")
-        mixer.init()
-        mixer.music.load("message.mp3")
-        mixer.music.play()
+        if (self.sound):
+            language = 'en'
+            myobj = gTTS(text=message, lang=language, slow=False)
+            myobj.save("message.mp3")
+            mixer.init()
+            mixer.music.load("message.mp3")
+            mixer.music.play()
 
     def select_floor(self):
         self.l1 = QLabel('Select Floor: ')
@@ -69,6 +97,7 @@ class App(QWidget):
         self.button = QPushButton("Continue")
         self.layout.addWidget(self.button)
         self.button.setEnabled(False)
+        self.button.clicked.connect(self.directions)
 
     def listRooms(self,value):
         self.rooms = ["Select"]
@@ -87,22 +116,27 @@ class App(QWidget):
 
     # Confirm destination
     def destination(self,value):
-        if (value != "Select"):
+        if (value != "Select" and value != " "):
+            print(value)
             text = "You have selected room " + value + ". Press continue if that is correct."
             self.audio(text)
             self.room_num = value
             self.button.setEnabled(True)
+        if (value == "Select"):
+            self.button.setEnabled(False)
 
     # List Obstacles in Path
     def directions(self):
         obstacles = backend.getObstackeList();
 
         # Clear Screen
+        self.backward.setEnabled(True)
         self.clearWidget(self.combobox1)
         self.clearWidget(self.combobox2)
         self.clearWidget(self.l1)
         self.clearWidget(self.l2)
         self.clearWidget(self.button)
+        self.clearWidget(self.pic)
 
         self.label.setText("Obstacles in the path are:")
         self.audio("Obstacles in the path are.")
@@ -141,12 +175,63 @@ class App(QWidget):
         mixer.music.load("Georgeofthejungle.mp3")
         mixer.music.play()
 
-
     # Clear Widget
     def clearWidget(self, item):
         self.layout.removeWidget(item)
         item.deleteLater()
         item = None
+
+    def muteSound(self):
+        if (self.sound):
+            if (self.dark_mode): self.mute.setIcon(QIcon('icons/mute_white.png'))
+            else: self.mute.setIcon(QIcon('icons/mute_black.png'))
+            self.audio("Sound off")
+            QtTest.QTest.qWait(1000)
+            self.sound = False
+        else:
+            if (self.dark_mode): self.mute.setIcon(QIcon('icons/unmute_white.png'))
+            else: self.mute.setIcon(QIcon('icons/unmute_black.png'))
+            self.sound = True
+            self.audio("Sound on")
+            QtTest.QTest.qWait(1000)
+
+    def goBack(self):
+        self.clearWidget(self.backward)
+        self.clearWidget(self.mute)
+        self.clearWidget(self.help)
+        #self.clearLayout(self.layout)
+        #self.layout.deleteLater()
+        #self.layout = None
+        self.setup()
+
+    def changeMode(self):
+        if (self.dark_mode):
+            self.dark_mode = False
+            self.mode.setIcon(QIcon('icons/sun.png'))
+            self.backward.setIcon(QIcon('icons/back_black.png'))
+            if (self.sound): self.mute.setIcon(QIcon('icons/unmute_black.png'))
+            else: self.mute.setIcon(QIcon('icons/mute_black.png'))
+            with open("light/stylesheet.qss", "r") as f:
+                content = f.readlines()
+            text = ""
+            for i in content:
+                text += i
+            self.setStyleSheet(text)
+
+        else:
+            self.dark_mode = True
+            self.mode.setIcon(QIcon('icons/moon.png'))
+            self.backward.setIcon(QIcon('icons/back_white.png'))
+            if (self.sound): self.mute.setIcon(QIcon('icons/unmute_white.png'))
+            else: self.mute.setIcon(QIcon('icons/mute_white.png'))
+            with open("dark/stylesheet.qss", "r") as f:
+                content = f.readlines()
+            text = ""
+            for i in content:
+                text += i
+            self.setStyleSheet(text)
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
