@@ -144,6 +144,11 @@ namespace roomba_rviz_plugins {
             marker_msg.header.frame_id = "/map";
             marker_msg.id = ++_markerCount;
             marker_msg.text = node.first.as<std::string>();
+
+            std::cout << "---------------------------------------------------------" << std::endl;
+            std::cout << marker_msg.text << std::endl;
+            std::cout << "---------------------------------------------------------" << std::endl;
+
             marker_msg.color.a = 1.0f;
             marker_msg.color.r = 1.0f;
             marker_msg.color.g = 1.0f;
@@ -155,22 +160,29 @@ namespace roomba_rviz_plugins {
             marker_msg.scale.z = 0.2;
             _nameMarkerArray.markers.push_back(marker_msg);
         }
-        _nameMarkerPub->publish(_nameMarkerArray);
+
 
 
         for (const auto &node: top) {
             auto connections = node.second["connections"].as<std::vector<YAML::Node>>();
-            auto currentId = node.first.as<int>();
+            std::string currentId = node.first.as<std::string>();
             for (const auto &connection: connections) {
-                auto conn_id = connection["id"];
-                if (conn_id.as<std::string>() == "") {
+                std::string conn_id = connection["id"].as<std::string>();
+                if (conn_id == "") {
                     continue;
                 }
-                auto currentNode = _mapNodes[currentId - 1];
+
+                currentId.erase(0, 1);
+                conn_id.erase(0, 1);
+
+                int currentIdInt = std::stoi(currentId);
+                int connIdInt = std::stoi(conn_id);
+
+                auto currentNode = _mapNodes[currentIdInt - 1];
                 if (currentNode == nullptr) {
                     continue;
                 }
-                auto otherNode = _mapNodes[conn_id.as<int>() - 1];
+                auto otherNode = _mapNodes[connIdInt- 1];
                 if (otherNode == nullptr) {
                     continue;
                 }
@@ -205,6 +217,7 @@ namespace roomba_rviz_plugins {
             }
 
             _connectionsMarkerPub->publish(_connectionsMarkerArray);
+            _nameMarkerPub->publish(_nameMarkerArray);
             _lastSaved = true;
         }
     }
