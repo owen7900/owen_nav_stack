@@ -19,10 +19,12 @@ std::unordered_map<NavigationState, std::string> MapToString = {
 
 MasterNavigator::MasterNavigator(const std::string& name) : rclcpp::Node(name), log_period_count(0)
 {
-  this->declare_parameter("/starting_floor", rclcpp::ParameterValue("one"));
+  this->declare_parameter("/starting_floor", rclcpp::ParameterValue("1"));
   current_pos.floor_id.data = this->get_parameter("/starting_floor").as_string();
 
-  floor_pub = this->create_publisher<std_msgs::msg::String>("/floor", 1);
+  rclcpp::QoS qos(10);
+  qos.transient_local();
+  floor_pub = this->create_publisher<std_msgs::msg::String>("/floor", qos);
   elevator_pub = this->create_publisher<std_msgs::msg::String>("/elevator_request", 1);
   feature_list_pub = this->create_publisher<roomba_msgs::msg::StringArray>("/feature_list", 1);
   arrived_pub = this->create_publisher<std_msgs::msg::Bool>("/arrived", 1);
@@ -63,6 +65,7 @@ void MasterNavigator::control_loop()
   {
     log_period_count = 0;
     this->print_status();
+    this->floor_pub->publish(this->current_pos.floor_id);
   }
 }
 
@@ -177,7 +180,7 @@ void MasterNavigator::handle_navigation_success()
     else
     {
       NavigateClientT::Goal goal;
-      goal.pose.header.frame_id = "/map";
+      goal.pose.header.frame_id = "map";
       goal.pose.header.stamp = this->get_clock()->now();
       goal.pose.pose.position = path.points[path_idx].point;
       this->navigate_to_goal(goal);
@@ -204,7 +207,7 @@ void MasterNavigator::elevator_result_callback(
     case rclcpp_action::ResultCode::SUCCEEDED: {
       state = NavigationState::NavigateToPoint;
       NavigateClientT::Goal goal;
-      goal.pose.header.frame_id = "/map";
+      goal.pose.header.frame_id = "map";
       goal.pose.header.stamp = this->get_clock()->now();
       goal.pose.pose.position = path.points[path_idx].point;
       this->navigate_to_goal(goal);
