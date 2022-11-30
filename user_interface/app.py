@@ -113,7 +113,7 @@ class App(QWidget):
 
     def listRooms(self,value):
         self.rooms = ["Select"]
-        rooms = backend.listByFloor(int(value))
+        rooms = backend.listByFloor(value)
         for i in rooms:
             self.rooms.append(i)
         self.combobox2.clear()
