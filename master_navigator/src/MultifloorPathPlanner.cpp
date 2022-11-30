@@ -7,15 +7,11 @@
 
 MultifloorPathPlanner::MultifloorPathPlanner(rclcpp::Node::SharedPtr _node) : node(_node)
 {
-  node->declare_parameter("/maps", rclcpp::ParameterType::PARAMETER_STRING_ARRAY);
-  std::vector<std::string> map_names;
-  node->get_parameter("/maps", map_names);
-
   node->declare_parameter("/map_node_file", rclcpp::ParameterType::PARAMETER_STRING);
   std::string map_node_file;
   if (!node->get_parameter("/map_node_file", map_node_file))
   {
-    map_node_file = "/home/owen/owen_ws/src/owen_nav_stack/owen_bringup/config/map_nodes.yaml";
+    map_node_file = "/home/owen/owen_ws/src/nav_stack/owen_bringup/config/map_nodes.yaml";
   }
 
   this->read_map_nodes(map_node_file);
@@ -29,17 +25,14 @@ void MultifloorPathPlanner::read_map_nodes(const std::string& map_node_file)
 
   for (const auto& n : top)
   {
-    int id = n.first.as<int>();
-    if (map_nodes.count(id) > 0)
-    {
-      RCLCPP_WARN(node->get_logger(), "Got duplicate node id %d", id);
-      continue;
-    }
-
+    const int id = n.first.as<int>();
     map_nodes[id].node_id = id;
+
     for (const auto& conn : n.second["connections"])
     {
-      map_nodes[id].connections.push_back({ conn["id"].as<int>(), conn["cost"].as<double>() });
+      const int connId = conn["id"].as<int>();
+      map_nodes[id].connections.push_back({ connId, conn["cost"].as<double>() });
+      map_nodes[connId].connections.push_back({ id, conn["cost"].as<double>() });
     }
 
     map_nodes[id].point.floor_id.data = n.second["floor_id"].as<std::string>();
