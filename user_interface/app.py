@@ -14,7 +14,7 @@ class App(QWidget):
 
         self.setup()
         self.sound = True;
-        #self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Would you like to go to floor 1, 2, or 3?')
+        self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Press H if you would like to hear the help menu. Would you like to go to floor 1, 2, or 3?')
 
         self.rooms = ['Select']
         self.room_num = None;
@@ -22,6 +22,15 @@ class App(QWidget):
 
         self.select_floor()
         self.show()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_H:
+            self.playHelpMenu()
+        if event.key() == Qt.Key_B:
+            self.changeMode()
+        if event.key() == Qt.Key_M:
+            self.muteSound()
+        event.accept()
 
     def setup(self):
         self.setWindowTitle("Autonomous Building Guide")
@@ -48,6 +57,7 @@ class App(QWidget):
         self.backward.setIcon(QIcon('icons/back_white.png'))
         self.backward.setEnabled(False)
         self.help = QAction("Help")
+        self.help.triggered.connect(self.playHelpMenu)
         self.mute = QAction()
         self.mute.setIcon(QIcon('icons/unmute_white.png'))
         self.mute.triggered.connect(self.muteSound)
@@ -165,6 +175,7 @@ class App(QWidget):
 
         # Clear screen
         self.clearWidget(self.temp)
+        self.clearWidget(self.button2)
 
         # Robot should begin moving here
         self.audio("Going to room " + self.room_num)
@@ -231,7 +242,9 @@ class App(QWidget):
                 text += i
             self.setStyleSheet(text)
 
-
+    def playHelpMenu(self):
+        text = "Help Menu. M to mute/unmute. B to change to light/dark mode."
+        self.audio(text)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
