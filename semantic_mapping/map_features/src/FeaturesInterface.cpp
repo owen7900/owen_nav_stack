@@ -7,7 +7,7 @@
 #include <eigen3/Eigen/Dense>
 
 namespace CONSTANTS{
-    const std::string ConfigPath = "/home/kevin/capston_ws/src/nav_stack/owen_bringup/config/multi_floor_params.yaml";
+    const std::string ConfigPath = "/home/owen/owen_ws/src/nav_stack/owen_bringup/config/multi_floor_params.yaml";
 }
 
 

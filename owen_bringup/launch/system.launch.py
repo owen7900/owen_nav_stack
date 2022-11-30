@@ -69,6 +69,13 @@ def generate_launch_description():
             condition=IfCondition(PythonExpression([simulation]))
             )
 
+    map_features = Node(
+            package='map_features',
+            executable='map_features',
+            name='map_features',
+            output='screen'
+            )
+
     navigation_launch = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('owen_bringup'), 'launch'),
@@ -118,6 +125,7 @@ def generate_launch_description():
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
+        map_features,
 #        simulation_launch,
         slam_launch,
         system_controller,
@@ -127,7 +135,7 @@ def generate_launch_description():
         lidar_node,
 #        elevator_traverser,
     #    apriltag_launch,
-#        master_navigator,
+        master_navigator,
     #    apriltag_node
         ])
 
