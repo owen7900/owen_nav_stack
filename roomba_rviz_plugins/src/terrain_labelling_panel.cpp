@@ -108,8 +108,10 @@ namespace roomba_rviz_plugins{
         auto lock = context->getRosNodeAbstraction().lock();
         auto raw_node = lock->get_raw_node();
 
-        _labelTypePub = raw_node->create_publisher<std_msgs::msg::Int64>("/labelType", 10);
-        _labelNamePub = raw_node->create_publisher<std_msgs::msg::String>("/labelName", 10);
+        _labelTypeClient = raw_node->create_client<roomba_msgs::srv::SwitchLabellingType>("switchLabelType");
+        _clearLabelsClient = raw_node->create_client<std_srvs::srv::Empty>("clearLabels");
+        _loadConfigClient = raw_node->create_client<roomba_msgs::srv::LoadConfig>("loadConfig");
+        _addLabelClient = raw_node->create_client<roomba_msgs::srv::AddLabel>("addLabel");
 
         _obsSub = raw_node->create_subscription<roomba_msgs::msg::MultifloorRectangle>("/obstacles",
                                                                             10,
@@ -128,9 +130,6 @@ namespace roomba_rviz_plugins{
                                                                                       std::bind(
                                                                                               &TerrainLabelling::destinationCallback,
                                                                                               this, std::placeholders::_1));
-
-        _clearLabelsClient = raw_node->create_client<std_srvs::srv::Empty>("clearLabels");
-        _loadConfigClient = raw_node->create_client<roomba_msgs::srv::LoadConfig>("loadConfig");
     }
 
     TerrainLabelling::~TerrainLabelling() noexcept {}
@@ -158,15 +157,17 @@ namespace roomba_rviz_plugins{
             _currentLabelType = CONSTANTS::DESTINATION;
         }
 
-        std_msgs::msg::Int64 msg = std_msgs::msg::Int64();
-        msg.data = _currentLabelType;
-        _labelTypePub->publish(msg);
+        auto request = std::make_shared<roomba_msgs::srv::SwitchLabellingType::Request>();
+        request->type.data = _currentLabelType;
+        _labelTypeClient->async_send_request(request);
     }
 
     void TerrainLabelling::AddLabel() {
-        auto msg = std_msgs::msg::String();
-        msg.data = _label->text().toStdString();
-        _labelNamePub->publish(msg);
+        auto request = std::make_shared<roomba_msgs::srv::AddLabel::Request>();
+        request->label.data = _label->text().toStdString();
+        _addLabelClient->async_send_request(request, std::bind(&TerrainLabelling::saveLabel,
+                                                               this,
+                                                               std::placeholders::_1));
         _label->clear();
     }
 
@@ -179,20 +180,27 @@ namespace roomba_rviz_plugins{
         for(const auto &obs : _obstacles){
             node["no pass"].push_back(obs.label.data);
             node["obstacles"][obs.label.data];
-            node["obstacles"][obs.label.data]["xmin"] = obs.p1.x;
-            node["obstacles"][obs.label.data]["ymin"] = obs.p1.y;
-            node["obstacles"][obs.label.data]["xmax"] = obs.p2.x;
-            node["obstacles"][obs.label.data]["ymax"] = obs.p2.y;
+            node["obstacles"][obs.label.data]["x1"] = obs.p1.x;
+            node["obstacles"][obs.label.data]["y1"] = obs.p1.y;
+            node["obstacles"][obs.label.data]["x2"] = obs.p2.x;
+            node["obstacles"][obs.label.data]["y2"] = obs.p2.y;
+            node["obstacles"][obs.label.data]["x3"] = obs.p3.y;
+            node["obstacles"][obs.label.data]["y3"] = obs.p3.y;
+            node["obstacles"][obs.label.data]["x4"] = obs.p4.y;
+            node["obstacles"][obs.label.data]["y4"] = obs.p4.y;
             node["obstacles"][obs.label.data]["floor"] = obs.floor_id.data;
         }
 
         node["features"];
         for(const auto &feat : _features){
-            node["features"][feat.label.data];
-            node["features"][feat.label.data]["xmin"] = feat.p1.x;
-            node["features"][feat.label.data]["ymin"] = feat.p1.y;
-            node["features"][feat.label.data]["xmax"] = feat.p2.x;
-            node["features"][feat.label.data]["ymax"] = feat.p2.y;
+            node["features"][feat.label.data]["x1"] = feat.p1.x;
+            node["features"][feat.label.data]["y1"] = feat.p1.y;
+            node["features"][feat.label.data]["x2"] = feat.p2.x;
+            node["features"][feat.label.data]["y2"] = feat.p2.y;
+            node["features"][feat.label.data]["x3"] = feat.p3.x;
+            node["features"][feat.label.data]["y3"] = feat.p3.y;
+            node["features"][feat.label.data]["x4"] = feat.p4.x;
+            node["features"][feat.label.data]["y4"] = feat.p4.y;
             node["features"][feat.label.data]["floor"] = feat.floor_id.data;
         }
 
@@ -227,6 +235,25 @@ namespace roomba_rviz_plugins{
         request->path.data = _loadConfigPath->text().toStdString();
         _loadConfigClient->async_send_request(request);
         _loadConfigPath->clear();
+    }
+
+    void TerrainLabelling::saveLabel(rclcpp::Client<roomba_msgs::srv::AddLabel>::SharedFuture future) {
+        auto points = future.get()->points;
+        if(points.size() == 1){
+            _destinations.push_back(points.back());
+        } else{
+            roomba_msgs::msg::MultifloorRectangle rect;
+            rect.label = points[0].label;
+            rect.floor_id = points[0].floor_id;
+            rect.p1 = points[0].point;
+            rect.p2 = points[1].point;
+            rect.p3 = points[2].point;
+            rect.p4 = points[3].point;
+            if(_currentLabelType == CONSTANTS::OBSTACLE)
+                _obstacles.push_back(rect);
+            if(_currentLabelType == CONSTANTS::FEATURE)
+                _features.push_back(rect);
+        }
     }
 
 } // namespace roomba_rviz_plugins

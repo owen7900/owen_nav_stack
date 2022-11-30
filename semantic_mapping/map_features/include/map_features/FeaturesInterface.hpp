@@ -8,7 +8,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "roomba_msgs/srv/get_path_obstacles.hpp"
 #include "roomba_msgs/srv/get_available_destinations.hpp"
-#include "owen_common/shapes.hpp"
 
 
 
@@ -21,7 +20,6 @@ private:
     void getAvailableDestination(const std::shared_ptr<roomba_msgs::srv::GetAvailableDestinations::Request> request, std::shared_ptr<roomba_msgs::srv::GetAvailableDestinations::Response> response);
     void destinationNameCallback(std_msgs::msg::String msg);
     void loadConfig();
-    bool isPointInPath(double x, double y, double x1, double x2, double ya, double y2);
 
 private:
     rclcpp::Service<roomba_msgs::srv::GetPathObstacles>::SharedPtr pathFeaturesService_;

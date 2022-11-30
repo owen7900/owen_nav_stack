@@ -28,6 +28,8 @@
 #include "roomba_msgs/msg/multifloor_rectangle.hpp"
 #include "roomba_msgs/msg/multifloor_point.hpp"
 #include "roomba_msgs/srv/load_config.hpp"
+#include "roomba_msgs/srv/switch_labelling_type.hpp"
+#include "roomba_msgs/srv/add_label.hpp"
 #include "std_srvs/srv/empty.hpp"
 
 
@@ -51,6 +53,7 @@ private:
     void obstacleCallback(roomba_msgs::msg::MultifloorRectangle msg);
     void featureCallback(roomba_msgs::msg::MultifloorRectangle msg);
     void destinationCallback(roomba_msgs::msg::MultifloorPoint msg);
+    void saveLabel(rclcpp::Client<roomba_msgs::srv::AddLabel>::SharedFuture future);
 
 protected:
     QVBoxLayout * _verticalBox;
@@ -88,11 +91,8 @@ private:
 
     rclcpp::Client<std_srvs::srv::Empty>::SharedPtr _clearLabelsClient;
     rclcpp::Client<roomba_msgs::srv::LoadConfig>::SharedPtr _loadConfigClient;
-
-    // TODO: make this a service client
-    rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr _labelTypePub;
-    // TODO: make this a service client
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _labelNamePub;
+    rclcpp::Client<roomba_msgs::srv::SwitchLabellingType>::SharedPtr _labelTypeClient;
+    rclcpp::Client<roomba_msgs::srv::AddLabel>::SharedPtr _addLabelClient;
     // TODO: make these each a service (addObs, addFeat, addDest)
     rclcpp::Subscription<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _obsSub;
     rclcpp::Subscription<roomba_msgs::msg::MultifloorRectangle>::SharedPtr _featSub;
