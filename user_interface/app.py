@@ -2,6 +2,7 @@ import sys, os
 import backend
 from time import sleep
 from gtts import gTTS
+import pyttsx3
 from pygame import mixer
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QToolBar, QToolButton, QMenuBar, QMenu, QAction, QMainWindow
 from PyQt5.QtGui import *
@@ -127,7 +128,6 @@ class App(QWidget):
     # Confirm destination
     def destination(self,value):
         if (value != "Select" and value != " "):
-            print(value)
             text = "You have selected room " + value + ". Press continue if that is correct."
             self.audio(text)
             self.room_num = value
@@ -148,8 +148,8 @@ class App(QWidget):
         self.clearWidget(self.button)
         self.clearWidget(self.pic)
 
-        self.label.setText("Obstacles in the path are:")
-        self.audio("Obstacles in the path are.")
+        self.label.setText("Features in the path are:")
+        self.audio("Features in the path are.")
         QtTest.QTest.qWait(2000)
         self.temp = QLabel()
         self.layout.addWidget(self.temp)
@@ -172,6 +172,7 @@ class App(QWidget):
     # Screen when navigating to destination
     def navigating(self):
         self.label.setText("Going to room " + self.room_num)
+        backend.sendRoom(self.room_num)
 
         # Clear screen
         self.clearWidget(self.temp)
