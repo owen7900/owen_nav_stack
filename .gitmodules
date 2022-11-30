@@ -7,3 +7,13 @@
 [submodule "roscpp_code_format"]
 	path = roscpp_code_format
 	url = https://github.com/PickNikRobotics/roscpp_code_format
+
+[submodule "apriltag_ros"]
+	path = apriltag_ros
+	url = https://github.com/christianrauch/apriltag_ros
+[submodule "apriltag_msgs"]
+	path = apriltag_msgs
+	url = https://github.com/christianrauch/apriltag_msgs
+[submodule "apriltag"]
+	path = apriltag
+	url = https://github.com/AprilRobotics/apriltag

@@ -15,7 +15,7 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('owen_bringup')
 
     namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
 

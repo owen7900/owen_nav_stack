@@ -1,0 +1,14 @@
+Elevator1:
+  door_tag_ids: [1, 3, 5]
+  floor_tag_ids: 
+    2: "1"
+    4: "1"
+    6: "2"
+    8: "2"
+    10: "3"
+    12: "3"
+  back_id: 7
+  right_id: 9
+  left_id: 11
+  front_id: 13
+  door_id: 14

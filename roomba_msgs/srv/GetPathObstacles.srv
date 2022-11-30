@@ -1,4 +1,3 @@
 roomba_msgs/MultifloorPath path
 ---
-std_msgs/String[] feature_types
-roomba_msgs/MultifloorRectangle[] bounds
+roomba_msgs/MultifloorRectangle[] features_in_path
