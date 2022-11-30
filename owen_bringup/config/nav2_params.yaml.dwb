@@ -80,10 +80,7 @@ controller_server:
       yaw_goal_tolerance: 0.25
     # DWB parameters
     FollowPath:
-      plugin: "nav2_rotation_shim_controller::RotationShimController"
-      angular_dist_threshold: 0.4
-      rotate_to_heading_angular_vel: 0.3
-      primary_controller: "dwb_core::DWBLocalPlanner"
+      plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       min_vel_x: -0.1
       min_vel_y: 0.0
