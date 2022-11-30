@@ -2,6 +2,7 @@ import rclpy
 import time
 from rclpy import node
 from roomba_msgs.srv import GetAvailableDestinations
+from roomba_msgs.msg import MultifloorPoint
 from std_msgs.msg import Empty
 
 # Fake backend
@@ -9,12 +10,12 @@ from std_msgs.msg import Empty
 rclpy.init()
 node = rclpy.create_node('user_interface')
 roomByFloor = {}
+ptsByRoom = {}
 obstacleList = ["Ramp", "Elevator"]
 rclpy.spin_once(node, timeout_sec=0.5)
 
 destinationClient = node.create_client(GetAvailableDestinations, '/available_destinations')
-
-print(node.get_service_names_and_types())
+destPub = node.create_publisher(MultifloorPoint, '/multifloor_destination', 10)
 
 destinationClient.wait_for_service()
 
@@ -27,6 +28,7 @@ def callback(aDest):
         if not str(dest.floor_id.data) in roomByFloor:
             roomByFloor[str(dest.floor_id.data)] = []
         roomByFloor[dest.floor_id.data].append(dest.label.data)
+        ptsByRoom[dest.label.data] = dest
     print(roomByFloor)
 
 availDest.add_done_callback(callback)
@@ -48,4 +50,11 @@ def listByFloor(floor):
 
 def getObstackeList():
     return obstacleList
+
+def sendRoom(room):
+    r = str(room)
+    destPub.publish(ptsByRoom[r])
+    
+
+
 
