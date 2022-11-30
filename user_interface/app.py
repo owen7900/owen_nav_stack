@@ -2,6 +2,7 @@ import sys, os
 import backend
 from time import sleep
 from gtts import gTTS
+import pyttsx3
 from pygame import mixer
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QToolBar, QToolButton, QMenuBar, QMenu, QAction, QMainWindow
 from PyQt5.QtGui import *
@@ -14,7 +15,7 @@ class App(QWidget):
 
         self.setup()
         self.sound = True;
-        #self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Would you like to go to floor 1, 2, or 3?')
+        self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Press H if you would like to hear the help menu. Would you like to go to floor 1, 2, or 3?')
 
         self.rooms = ['Select']
         self.room_num = None;
@@ -22,6 +23,15 @@ class App(QWidget):
 
         self.select_floor()
         self.show()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_H:
+            self.playHelpMenu()
+        if event.key() == Qt.Key_B:
+            self.changeMode()
+        if event.key() == Qt.Key_M:
+            self.muteSound()
+        event.accept()
 
     def setup(self):
         self.setWindowTitle("Autonomous Building Guide")
@@ -48,6 +58,7 @@ class App(QWidget):
         self.backward.setIcon(QIcon('icons/back_white.png'))
         self.backward.setEnabled(False)
         self.help = QAction("Help")
+        self.help.triggered.connect(self.playHelpMenu)
         self.mute = QAction()
         self.mute.setIcon(QIcon('icons/unmute_white.png'))
         self.mute.triggered.connect(self.muteSound)
@@ -117,7 +128,6 @@ class App(QWidget):
     # Confirm destination
     def destination(self,value):
         if (value != "Select" and value != " "):
-            print(value)
             text = "You have selected room " + value + ". Press continue if that is correct."
             self.audio(text)
             self.room_num = value
@@ -138,8 +148,8 @@ class App(QWidget):
         self.clearWidget(self.button)
         self.clearWidget(self.pic)
 
-        self.label.setText("Obstacles in the path are:")
-        self.audio("Obstacles in the path are.")
+        self.label.setText("Features in the path are:")
+        self.audio("Features in the path are.")
         QtTest.QTest.qWait(2000)
         self.temp = QLabel()
         self.layout.addWidget(self.temp)
@@ -162,9 +172,11 @@ class App(QWidget):
     # Screen when navigating to destination
     def navigating(self):
         self.label.setText("Going to room " + self.room_num)
+        backend.sendRoom(self.room_num)
 
         # Clear screen
         self.clearWidget(self.temp)
+        self.clearWidget(self.button2)
 
         # Robot should begin moving here
         self.audio("Going to room " + self.room_num)
@@ -231,7 +243,9 @@ class App(QWidget):
                 text += i
             self.setStyleSheet(text)
 
-
+    def playHelpMenu(self):
+        text = "Help Menu. M to mute/unmute. B to change to light/dark mode."
+        self.audio(text)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

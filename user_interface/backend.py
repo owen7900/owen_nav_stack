@@ -20,3 +20,6 @@ def getObstackeList():
     with open("obstacles.json","r") as f:
         data = json.load(f)
     return data["Obstacles"];
+
+def sendRoom(room):
+    print(room)
