@@ -5,11 +5,10 @@
 #ifndef SEMANTIC_COSTMAP_PLUGIN__SEMANTIC_COSTMAP_PLUGIN_HPP_
 #define SEMANTIC_COSTMAP_PLUGIN__SEMANTIC_COSTMAP_PLUGIN_HPP_
 
-#include "semantic_costmap_plugin/visibility_control.h"
-#include "owen_common/shapes.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "roomba_msgs/msg/multifloor_rectangle.hpp"
 #include <rclcpp/subscription.hpp>
 
 namespace semantic_costmap_plugin {
@@ -31,12 +30,13 @@ class SemanticMap : public nav2_costmap_2d::Layer {
         void setup();
         void floorCallback(const std_msgs::msg::String::SharedPtr msg);
 
+
     private:
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr floor_sub_;
         std::string floor_;
         double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
         bool need_recalculation_;
-        std::vector<owen_common::CostRect> no_pass_rects_;
+        std::vector<roomba_msgs::msg::MultifloorRectangle> no_pass_rects_;
         std::vector<std::string> no_pass_params_;
     };
 

@@ -11,15 +11,19 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(roomba_msgs REQUIRED)
 find_package(owen_common REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 set(dependencies
         pluginlib
         rclcpp
         nav2_costmap_2d
-        owen_common
         std_msgs
+        roomba_msgs
+        Eigen3
+        owen_common
         )
 
 #add_library(libyaml-cpp STATIC IMPORTED)
