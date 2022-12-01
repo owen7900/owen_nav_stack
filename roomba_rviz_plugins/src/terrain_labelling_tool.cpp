@@ -123,7 +123,7 @@ namespace roomba_rviz_plugins {
         if(_currentLabellingType == CONSTANTS::FEATURE)
             moveRect(_features.back(), xy_plane_intersection);
 
-        return flags | Render;
+        return flags;
     }
 
     int TerrainLabellingTool::processMouseMovedRightDown(std::pair<bool, Ogre::Vector3> xy_plane_intersection) {
@@ -236,10 +236,12 @@ namespace roomba_rviz_plugins {
         }
 
         std::pair<std::shared_ptr<rviz_rendering::Shape>, Ogre::Vector3> pair;
-        if(_currentLabellingType == CONSTANTS::OBSTACLE)
+        if(_currentLabellingType == CONSTANTS::OBSTACLE){
             pair = _obstacles.back();
-        if(_currentLabellingType == CONSTANTS::FEATURE)
+        }
+        if(_currentLabellingType == CONSTANTS::FEATURE){
             pair = _features.back();
+        }
 
         auto size = pair.second;
 

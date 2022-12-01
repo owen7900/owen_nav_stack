@@ -8,7 +8,7 @@
 #include "owen_common/math.hpp"
 
 namespace CONSTANTS{
-    const std::string ConfigPath = "/home/owen/owen_ws/src/nav_stack/owen_bringup/config/multi_floor_params.yaml";
+    const std::string ConfigPath = "/home/kevin/capston_ws/src/nav_stack/owen_bringup/config/multi_floor_params.yaml";
 }
 
 
@@ -26,15 +26,15 @@ FeaturesInterface::FeaturesInterface(const std::string& name) : rclcpp::Node(nam
             "path_features", std::bind(&FeaturesInterface::getPathFeatures, this, std::placeholders::_1, std::placeholders::_2)
             );
 
+
     availableDestinationsService_ = this->create_service<roomba_msgs::srv::GetAvailableDestinations>(
-            "available_destinations", std::bind(&FeaturesInterface::getAvailableDestination, this, std::placeholders::_1, std::placeholders::_2)
+            "/available_destinations", std::bind(&FeaturesInterface::getAvailableDestination, this, std::placeholders::_1, std::placeholders::_2)
     );
 }
 
 void FeaturesInterface::loadConfig() {
     RCLCPP_INFO_STREAM(this->get_logger(), "Parsing " << CONSTANTS::ConfigPath);
     YAML::Node top = YAML::LoadFile(CONSTANTS::ConfigPath);
-    RCLCPP_INFO_STREAM(this->get_logger(), "Parsed " << CONSTANTS::ConfigPath);
 
     auto features = top["features"];
     for(const auto &feature : features){
@@ -49,7 +49,6 @@ void FeaturesInterface::loadConfig() {
         auto x4 = vals["x4"].as<double>();
         auto y4 = vals["y4"].as<double>();
         auto floor = vals["floor"].as<std::string>();
-        auto label = vals["label"].as<std::string>();
 
         roomba_msgs::msg::MultifloorRectangle feature_msg;
         feature_msg.p1.x = x1;
@@ -61,7 +60,7 @@ void FeaturesInterface::loadConfig() {
         feature_msg.p4.x = x4;
         feature_msg.p4.y = y4;
         feature_msg.floor_id.data = floor;
-        feature_msg.label.data = label;
+        feature_msg.label.data = feature.first.as<std::string>();
 
         features_.push_back(feature_msg);
     }
@@ -73,16 +72,16 @@ void FeaturesInterface::loadConfig() {
         double x = vals["x"].as<double>();
         double y = vals["y"].as<double>();
         std::string floor = vals["floor"].as<std::string>();
-        std::string label = vals["label"].as<std::string>();
 
         roomba_msgs::msg::MultifloorPoint dest_msg;
         dest_msg.point.x = x;
         dest_msg.point.y = y;
         dest_msg.floor_id.data = floor;
-        dest_msg.label.data = label;
+        dest_msg.label.data = destination.first.as<std::string>();
 
         destinations_.push_back(dest_msg);
     }
+    RCLCPP_INFO_STREAM(this->get_logger(), "Parsed " << CONSTANTS::ConfigPath);
 }
 
 void FeaturesInterface::getPathFeatures(const std::shared_ptr<roomba_msgs::srv::GetPathObstacles::Request> request,
@@ -100,11 +99,17 @@ void FeaturesInterface::getPathFeatures(const std::shared_ptr<roomba_msgs::srv::
         Vec2 pathPoint1(lastPoint.point.x, lastPoint.point.y);
         Vec2 pathPoint2(point.point.x, point.point.y);
 
-        for(const auto& rect : features_){
-            if(point.floor_id.data == rect.floor_id.data){
-                if(owen_common::math::isPointInRect(rect, pathPoint1.x(), pathPoint1.y()) &&
-                   owen_common::math::isPointInRect(rect, pathPoint2.x(), pathPoint2.y())){
-                    pathFeatures.push_back(rect);
+        double m = (pathPoint2.y() - pathPoint1.y()) / (pathPoint2.x() - pathPoint1.x());
+        double b = pathPoint1.y() - (m*pathPoint1.x());
+
+        for(const auto &rect : features_){
+            for(double x = pathPoint1.x(); x <= pathPoint2.x(); x+=0.01){
+                double y = m*x + b;
+                if(point.floor_id.data == rect.floor_id.data){
+                    if(owen_common::math::isPointInRect(rect, x, y)){
+                        pathFeatures.push_back(rect);
+                        break;
+                    }
                 }
             }
         }

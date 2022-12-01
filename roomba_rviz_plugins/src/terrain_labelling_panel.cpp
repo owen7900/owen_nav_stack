@@ -101,6 +101,7 @@ namespace roomba_rviz_plugins{
         setLayout(_verticalBox);
 
         _obstacleRB->setChecked(true);
+        _currentLabelType = CONSTANTS::OBSTACLE;
     }
 
     void TerrainLabelling::onInitialize() {
@@ -178,7 +179,7 @@ namespace roomba_rviz_plugins{
         node["no_pass"] = std::vector<std::string>();
         node["obstacles"];
         for(const auto &obs : _obstacles){
-            node["no pass"].push_back(obs.label.data);
+            node["no_pass"].push_back(obs.label.data);
             node["obstacles"][obs.label.data];
             node["obstacles"][obs.label.data]["x1"] = obs.p1.x;
             node["obstacles"][obs.label.data]["y1"] = obs.p1.y;
