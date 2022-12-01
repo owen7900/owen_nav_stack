@@ -11,7 +11,7 @@ MultifloorPathPlanner::MultifloorPathPlanner(rclcpp::Node::SharedPtr _node) : no
   std::string map_node_file;
   if (!node->get_parameter("/map_node_file", map_node_file))
   {
-    map_node_file = "/home/owen/owen_ws/src/owen_nav_stack/owen_bringup/config/map_nodes.yaml";
+    map_node_file = "/home/owen/owen_ws/src/nav_stack/owen_bringup/config/map_nodes.yaml";
   }
 
   this->read_map_nodes(map_node_file);

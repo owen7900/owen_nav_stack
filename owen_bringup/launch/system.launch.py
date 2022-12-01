@@ -27,8 +27,29 @@ def generate_launch_description():
                     launch_arguments = {'slam_params_file': slam_params_file}.items(), 
                     condition=IfCondition(PythonExpression(['not ', localization]))
         )
+    slam_params_file = os.path.join(get_package_share_directory('owen_bringup'), 'config',
+                                        '1_mapper_params_localization.yaml')
+    localization_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('slam_toolbox'), 'launch'),
+                    '/online_async_launch.py']),
+                    launch_arguments = {'slam_params_file': slam_params_file}.items(), 
+                    condition=IfCondition(PythonExpression([localization]))
+        )
+ 
+#    localization_launch = Node(
+#            parameters=[
+#                slam_params_file
+#            ],
+#            package='slam_toolbox',
+#            executable='localization_slam_toolbox_node',
+#            name='slam_toolbox',
+#            output='screen',
+#            condition=IfCondition(PythonExpression([localization]))
+#        )
 
-    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
+
+#    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
 
     lidar_node = Node(
         package='rplidar_ros',
@@ -46,6 +67,13 @@ def generate_launch_description():
             PythonLaunchDescriptionSource([os.path.join(
                 get_package_share_directory('owen_bringup'), 'launch', 'simulation.launch.py')]),
             condition=IfCondition(PythonExpression([simulation]))
+            )
+
+    map_features = Node(
+            package='map_features',
+            executable='map_features',
+            name='map_features',
+            output='screen'
             )
 
     navigation_launch = IncludeLaunchDescription(
@@ -80,34 +108,35 @@ def generate_launch_description():
             output='screen'
             )
 
-    apriltag_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('apriltag_ros'), 'launch', 'tag_36h11_all.launch.py')]), condition=IfCondition(PythonExpression(['not ', simulation]))
-            )
+   # apriltag_launch = IncludeLaunchDescription(
+   #         PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('apriltag_ros'), 'launch', 'tag_36h11_all.launch.py')]), condition=IfCondition(PythonExpression(['not ', simulation]))
+   #         )
 
-    apriltag_node = Node(
-            package='apriltag_ros',
-            executable='apriltag_node',
-            condition=IfCondition(PythonExpression([simulation])),
-            remappings=[('/image_rect', '/george_cam/image_raw'),
-                        ('/camera_info','/george_cam/camera_info')]
-            )
+   # apriltag_node = Node(
+   #         package='apriltag_ros',
+   #         executable='apriltag_node',
+   #         condition=IfCondition(PythonExpression([simulation])),
+   #         remappings=[('/image_rect', '/george_cam/image_raw'),
+   #                     ('/camera_info','/george_cam/camera_info')]
+   #         )
 
 
 
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
-        simulation_launch,
+        map_features,
+#        simulation_launch,
         slam_launch,
         system_controller,
         create_launch,
         navigation_launch,
         localization_launch,
         lidar_node,
-        elevator_traverser,
-        apriltag_launch,
+#        elevator_traverser,
+    #    apriltag_launch,
         master_navigator,
-        apriltag_node
+    #    apriltag_node
         ])
 
     return ld;

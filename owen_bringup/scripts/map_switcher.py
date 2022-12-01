@@ -54,14 +54,14 @@ def floor_callback(msg):
         )
 
         ld = LaunchDescription([slam_launch,
-                                RegisterEventHandler(
-                                    OnProcessStart(
-                                        target_action=slam_launch,
-                                        on_start=[
-                                            LogInfo(msg='slam_toolbox measurements paused'),
-                                            pause_measurements
-                                        ]
-                                    ))
+          #                      RegisterEventHandler(
+           #                         OnProcessStart(
+            #                            target_action=slam_launch,
+             #                           on_start=[
+              #                              LogInfo(msg='slam_toolbox measurements paused'),
+               #                             pause_measurements
+                #                        ]
+                 #                   ))
                                 ])
         l.acquire(blocking=True)
         ls = LaunchService()

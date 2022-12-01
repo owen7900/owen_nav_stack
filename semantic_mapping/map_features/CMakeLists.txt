@@ -18,8 +18,8 @@ ament_target_dependencies(${PROJECT_NAME}
         Eigen3
         yaml-cpp
         rclcpp
-        roomba_msgs
-        owen_common)
+        owen_common
+        roomba_msgs)
 
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
