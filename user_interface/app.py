@@ -16,8 +16,7 @@ class App(QWidget):
 
         self.setup()
         self.sound = True;
-        self.audio('Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Press H if you would like to hear the help menu. Would you like to go to floor 1, 2, or 3?')
-
+        self.audio("Welcome",'Welcome to Beamish Munro Hall. My name is George. I will guide you to your destination within the building. Press H if you would like to hear the help menu. Would you like to go to floor 1, 2, or 3?')
         self.rooms = ['Select']
         self.room_num = None;
         self.dark_mode = True
@@ -77,14 +76,21 @@ class App(QWidget):
         self.layout.setMenuBar(self.menuBar)
         self.layout.addWidget(self.label)
 
-    def audio(self,message):
+    def audio(self,filename, message):
         if (self.sound):
-            language = 'en'
-            myobj = gTTS(text=message, lang=language, slow=False)
-            myobj.save("message.mp3")
-            mixer.init()
-            mixer.music.load("message.mp3")
-            mixer.music.play()
+            files = os.listdir('sound')
+            filename += ".mp3"
+            if (filename in files):
+               mixer.init()
+               mixer.music.load("sound/" + filename)
+               mixer.music.play()
+            else:
+                language = 'en'
+                myobj = gTTS(text=message, lang=language, slow=False)
+                myobj.save("sound/" + filename)
+                mixer.init()
+                mixer.music.load("sound/" + filename)
+                mixer.music.play()
 
     def select_floor(self):
         self.l1 = QLabel('Select Floor: ')
@@ -118,19 +124,19 @@ class App(QWidget):
             self.rooms.append(i)
         self.combobox2.clear()
         self.combobox2.addItems(self.rooms)
-        self.audio("Room options are ")
+        self.audio("RoomOptions","Room options are ")
         QtTest.QTest.qWait(2000)
 
         for i in self.rooms:
             if i != "Select":
-                self.audio(i)
+                self.audio(i,i)
                 QtTest.QTest.qWait(1000)
 
     # Confirm destination
     def destination(self,value):
         if (value != "Select" and value != " "):
             text = "You have selected room " + value + ". Press continue if that is correct."
-            self.audio(text)
+            self.audio("Select" + value, text)
             self.room_num = value
             self.button.setEnabled(True)
         if (value == "Select"):
@@ -150,7 +156,7 @@ class App(QWidget):
         self.clearWidget(self.pic)
 
         self.label.setText("Features in the path are:")
-        self.audio("Features in the path are.")
+        self.audio("Features","Features in the path are.")
         QtTest.QTest.qWait(2000)
         self.temp = QLabel()
         self.layout.addWidget(self.temp)
@@ -158,13 +164,13 @@ class App(QWidget):
         if obstacles:
             for i in obstacles:
                 self.temp.setText(i)
-                self.audio(i)
+                self.audio(i,i)
                 QtTest.QTest.qWait(2000)
 
         else:
-            self.audio("None.")
+            self.audio("None","None.")
 
-        self.audio("Do you wish to continue?")
+        self.audio("Continue","Do you wish to continue?")
 
         self.button2 = QPushButton("Continue")
         self.layout.addWidget(self.button2)
@@ -180,7 +186,7 @@ class App(QWidget):
         self.clearWidget(self.button2)
 
         # Robot should begin moving here
-        self.audio("Going to room " + self.room_num)
+        self.audio("Going" + self.room_num, "Going to room " + self.room_num)
         QtTest.QTest.qWait(3000)
 
         # Play elevator music
@@ -198,14 +204,14 @@ class App(QWidget):
         if (self.sound):
             if (self.dark_mode): self.mute.setIcon(QIcon('icons/mute_white.png'))
             else: self.mute.setIcon(QIcon('icons/mute_black.png'))
-            self.audio("Sound off")
+            self.audio("Soundoff","Sound off")
             QtTest.QTest.qWait(1000)
             self.sound = False
         else:
             if (self.dark_mode): self.mute.setIcon(QIcon('icons/unmute_white.png'))
             else: self.mute.setIcon(QIcon('icons/unmute_black.png'))
             self.sound = True
-            self.audio("Sound on")
+            self.audio("Soundon","Sound on")
             QtTest.QTest.qWait(1000)
 
     def goBack(self):
@@ -246,7 +252,7 @@ class App(QWidget):
 
     def playHelpMenu(self):
         text = "Help Menu. M to mute/unmute. B to change to light/dark mode."
-        self.audio(text)
+        self.audio("Help",text)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
