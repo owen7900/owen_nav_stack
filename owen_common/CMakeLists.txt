@@ -8,15 +8,26 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
+find_package(roomba_msgs REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-add_library(owen_common src/owen_common.cpp)
+set(dependencies
+        roomba_msgs
+        Eigen3
+        )
+
+add_library(owen_common src/owen_common.cpp src/math.cpp)
 target_compile_features(owen_common PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_include_directories(owen_common PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(owen_common
+        ${dependencies}
+        )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -44,6 +55,8 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_dependencies(${dependencies})
 
 ament_export_include_directories(
   include

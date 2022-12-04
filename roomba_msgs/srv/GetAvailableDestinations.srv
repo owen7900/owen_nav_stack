@@ -1,0 +1,3 @@
+std_msgs/Empty nothing
+---
+roomba_msgs/MultifloorPoint[] destinations

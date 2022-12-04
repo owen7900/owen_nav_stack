@@ -15,6 +15,9 @@ SystemController::SystemController(const std::string& name) : rclcpp::Node(name)
   this->_cmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>(
       "/cmd_vel", 10, std::bind(&SystemController::cmdVelCallback, this, _1));
 
+  this->_elevatorSub = this->create_subscription<geometry_msgs::msg::Twist>(
+      "/elevator_traverser/cmd_vel", 10, std::bind(&SystemController::elevatorCallback, this, std::placeholders::_1));
+
   this->_manualSub = this->create_subscription<geometry_msgs::msg::Twist>(
       "/manual/cmd_vel", 10, std::bind(&SystemController::manualCmdVelCallback, this, _1));
 
@@ -88,19 +91,31 @@ void SystemController::cmdVelCallback(const geometry_msgs::msg::Twist::ConstShar
   this->_autonomousCmd.SetData(*msg);
 }
 
+void SystemController::elevatorCallback(const geometry_msgs::msg::Twist::ConstSharedPtr msg)
+{
+  this->_elevatorCmd.SetData(*msg);
+}
+
 void SystemController::controlCallback()
 {
   if (this->_manualCmd.IsDataTimeout())
   {
     auto toSend = std::make_unique<geometry_msgs::msg::Twist>();
+    geometry_msgs::msg::Twist msg;
 
-    if (this->_autonomousCmd.IsDataTimeout())
+    if (!this->_elevatorCmd.IsDataTimeout())
+    {
+      msg = this->_elevatorCmd.GetData();
+    }
+    else if (!this->_autonomousCmd.IsDataTimeout())
+    {
+      msg = this->_autonomousCmd.GetData();
+    }
+    else
     {
       this->_cmdVelPub->publish(std::move(toSend));
       return;
     }
-
-    const auto msg = this->_autonomousCmd.GetData();
 
     toSend->angular.z = msg.angular.z;
     const auto status = this->_status.GetData();
