@@ -4,7 +4,7 @@ import json
 
 def getRoomsList():
     # Temp until integration with Roomba
-    with open("rooms.json","r") as f:
+    with open("Rooms.json","r") as f:
         data = json.load(f)
     return data;
 
@@ -12,7 +12,7 @@ def listByFloor(floor):
     data = getRoomsList()
     rooms = []
     for i in data["Rooms"]:
-        if i["floor"] == floor:
+        if int(i["floor"]) == int(floor):
             rooms.append(str(i["room"]))
     return rooms
 

@@ -1,12 +1,11 @@
 import sys, os
 import backend
-from time import sleep
 from gtts import gTTS
-import pyttsx3
 from pygame import mixer
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QToolBar, QToolButton, QMenuBar, QMenu, QAction, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QMenuBar, QAction
 from PyQt5.QtGui import *
-from PyQt5.QtCore import QSize, Qt, QRect, QFile, QTextStream
+from PyQt5.QtCore import Qt
+
 from PyQt5 import QtTest
 
 class App(QWidget):
@@ -24,17 +23,30 @@ class App(QWidget):
         self.show()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_H:
+        if event.key() == 47:
             self.playHelpMenu()
-        if event.key() == Qt.Key_B:
+        if event.key() == 42:
             self.changeMode()
-        if event.key() == Qt.Key_M:
+        if event.key() == 45:
             self.muteSound()
+        if event.key() == 48:
+            self.combobox1.showPopup()
+        if event.key() == 46:
+            self.combobox2.showPopup()
+        if event.key() == Qt.Key_Enter:
+            if (self.button.isEnabled()):
+                if (self.state == "Select"):
+                    self.directions()
+                else:
+                    self.navigating()
+            else:
+                event.accept()
         event.accept()
 
     def setup(self):
         self.setWindowTitle("Autonomous Building Guide")
         self.setFixedWidth(500)
+        self.state = "Select"
 
         with open("dark/stylesheet.qss", "r") as f:
             content = f.readlines()
@@ -47,11 +59,6 @@ class App(QWidget):
         self.setLayout(self.layout)
 
         self.label = QLabel()
-
-        self.pic = QLabel()
-        pixmap = QPixmap(os.getcwd() + '/roomba.png')
-        pixmap = pixmap.scaled(128, 128, Qt.KeepAspectRatio)
-        self.pic.setPixmap(pixmap)
 
         self.backward = QAction()
         self.backward.setIcon(QIcon('icons/back_white.png'))
@@ -143,6 +150,7 @@ class App(QWidget):
 
     # List Obstacles in Path
     def directions(self):
+        self.state = "Obstacles"
         obstacles = backend.getObstackeList();
 
         # Clear Screen
@@ -151,8 +159,7 @@ class App(QWidget):
         self.clearWidget(self.combobox2)
         self.clearWidget(self.l1)
         self.clearWidget(self.l2)
-        self.clearWidget(self.button)
-        self.clearWidget(self.pic)
+        self.layout.removeWidget(self.button)
 
         self.label.setText("Features in the path are:")
         self.audio("Features","Features in the path are.")
@@ -171,9 +178,8 @@ class App(QWidget):
 
         self.audio("Continue","Do you wish to continue?")
 
-        self.button2 = QPushButton("Continue")
-        self.layout.addWidget(self.button2)
-        self.button2.clicked.connect(self.navigating)
+        self.layout.addWidget(self.button)
+        self.button.clicked.connect(self.navigating)
 
     # Screen when navigating to destination
     def navigating(self):
@@ -182,7 +188,7 @@ class App(QWidget):
 
         # Clear screen
         self.clearWidget(self.temp)
-        self.clearWidget(self.button2)
+        self.clearWidget(self.button)
 
         # Robot should begin moving here
         self.audio("Going" + self.room_num, "Going to room " + self.room_num)
@@ -217,9 +223,6 @@ class App(QWidget):
         self.clearWidget(self.backward)
         self.clearWidget(self.mute)
         self.clearWidget(self.help)
-        #self.clearLayout(self.layout)
-        #self.layout.deleteLater()
-        #self.layout = None
         self.setup()
 
     def changeMode(self):
