@@ -14,9 +14,11 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 def generate_launch_description():
     simulation = LaunchConfiguration('simulation')
     localization = LaunchConfiguration('localization')
+    shit_lidar = LaunchConfiguration('shit_lidar')
 
     simulation_arg = DeclareLaunchArgument("simulation", default_value='True')
     localization_arg = DeclareLaunchArgument("localization", default_value='False')
+    shit_lidar_arg = DeclareLaunchArgument('shit_lidar', default_value='False')
 
     slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
                                     'config', 'mapper_params_online_async.yaml')
@@ -51,6 +53,34 @@ def generate_launch_description():
 
 #    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
 
+    velodyne_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource([
+                                                os.path.join(get_package_share_directory('velodyne'), 
+                                                'launch'), 
+                                                '/velodyne-all-nodes-VLP16-composed-launch.py']), 
+                                               condition=IfCondition(PythonExpression(['not ', shit_lidar, ' and not ', simulation]) )) 
+
+    pointcloud_to_laserscan_node = Node(
+            package='pointcloud_to_laserscan', executable='pointcloud_to_laserscan_node',
+            remappings=[('cloud_in', ['/velodyne_points']),
+                        ('scan', ['/scan'])],
+            parameters=[{
+                'target_frame': 'velodyne',
+                'transform_tolerance': 0.01,
+                'min_height': 0.0,
+                'max_height': 2.0,
+                'angle_min': -3.14159,  # -M_PI/2
+                'angle_max': 3.14159,  # M_PI/2
+                'angle_increment': 0.007,  # M_PI/360.0
+                'scan_time': 0.01,
+                'range_min': 0.45,
+                'range_max': 50.0,
+                'use_inf': True,
+                'inf_epsilon': 1.0
+            }],
+            name='pointcloud_to_laserscan',
+            condition=IfCondition(PythonExpression(['not ', shit_lidar]))
+        )
+
     lidar_node = Node(
         package='rplidar_ros',
         executable='rplidar_composition',
@@ -61,7 +91,7 @@ def generate_launch_description():
             'frame_id' : 'laser',
             'angle_compensate' : True
             }],
-        condition=IfCondition(PythonExpression(['not ', simulation]))
+        condition=IfCondition(PythonExpression(['not ', simulation, ' and not ', shit_lidar]))
         )
     simulation_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([os.path.join(
@@ -125,17 +155,20 @@ def generate_launch_description():
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
+        shit_lidar_arg,
         map_features,
-#        simulation_launch,
+        pointcloud_to_laserscan_node,
+        simulation_launch,
         slam_launch,
         system_controller,
         create_launch,
         navigation_launch,
         localization_launch,
+        velodyne_launch,
         lidar_node,
 #        elevator_traverser,
     #    apriltag_launch,
-        master_navigator,
+    #       master_navigator,
     #    apriltag_node
         ])
 
