@@ -6,6 +6,7 @@
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 
 #include "roomba_msgs/msg/multifloor_point.hpp"
 #include "roomba_msgs/msg/string_array.hpp"
@@ -42,7 +43,7 @@ private:
   void elevator_result_callback(const rclcpp_action::ClientGoalHandle<ElevatorClientT>::WrappedResult& result);
   void elevator_goal_respose_callback(const rclcpp_action::ClientGoalHandle<ElevatorClientT>::SharedPtr& goal);
 
-  void robot_pose_callback(const geometry_msgs::msg::PoseStamped& pose);
+  void robot_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped& pose);
 
   void handle_navigation_success();
   void handle_navigation_failure();
@@ -61,6 +62,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr arrived_pub;
 
   rclcpp::Subscription<roomba_msgs::msg::MultifloorPoint>::SharedPtr destination_sub;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub;
 
   rclcpp::Client<roomba_msgs::srv::GetPathObstacles>::SharedPtr path_obstacles_srv;
   rclcpp::Client<roomba_msgs::srv::CanContinue>::SharedPtr continue_srv;

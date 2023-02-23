@@ -31,6 +31,8 @@ MasterNavigator::MasterNavigator(const std::string& name) : rclcpp::Node(name), 
 
   destination_sub = this->create_subscription<roomba_msgs::msg::MultifloorPoint>(
       "/multifloor_destination", 10, std::bind(&MasterNavigator::destination_callback, this, std::placeholders::_1));
+  pose_sub = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "pose", 1, std::bind(&MasterNavigator::robot_pose_callback, this, std::placeholders::_1));
 
   path_obstacles_srv = this->create_client<roomba_msgs::srv::GetPathObstacles>("/path_obstacles_srv");
   continue_srv = this->create_client<roomba_msgs::srv::CanContinue>("/can_continue_srv");
@@ -240,4 +242,9 @@ void MasterNavigator::elevator_goal_respose_callback(
     RCLCPP_ERROR(get_logger(), "Elevator traversal failed to start HANDLE THIS FAILURE");
     state = NavigationState::WaitingForDestination;
   }
+}
+
+void MasterNavigator::robot_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped& pose)
+{
+  this->current_pos.point = pose.pose.pose.position;
 }
