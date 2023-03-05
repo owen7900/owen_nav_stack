@@ -5,6 +5,7 @@
 #include <nav2_util/simple_action_server.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/detail/string__struct.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 
@@ -38,6 +39,8 @@ private:
   void destination_callback(roomba_msgs::msg::MultifloorPoint::ConstSharedPtr msg);
 
   void navigation_result_callback(const rclcpp_action::ClientGoalHandle<NavigateClientT>::WrappedResult& result);
+  void navigation_feedback_callback(const rclcpp_action::ClientGoalHandle<NavigateClientT>::SharedPtr,
+                                    const std::shared_ptr<const NavigateClientT::Feedback> feedback);
   void navigation_goal_response_callback(const rclcpp_action::ClientGoalHandle<NavigateClientT>::SharedPtr& goal);
 
   void elevator_result_callback(const rclcpp_action::ClientGoalHandle<ElevatorClientT>::WrappedResult& result);
@@ -47,6 +50,8 @@ private:
 
   void handle_navigation_success();
   void handle_navigation_failure();
+
+  void send_spoken_instruction() const;
 
   void control_loop();
   void process_new_destination();
@@ -60,6 +65,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr elevator_pub;
   rclcpp::Publisher<roomba_msgs::msg::StringArray>::SharedPtr feature_list_pub;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr arrived_pub;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr speak_pub;
 
   rclcpp::Subscription<roomba_msgs::msg::MultifloorPoint>::SharedPtr destination_sub;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub;

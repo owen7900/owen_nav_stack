@@ -28,6 +28,7 @@ MasterNavigator::MasterNavigator(const std::string& name) : rclcpp::Node(name), 
   elevator_pub = this->create_publisher<std_msgs::msg::String>("/elevator_request", 1);
   feature_list_pub = this->create_publisher<roomba_msgs::msg::StringArray>("/feature_list", 1);
   arrived_pub = this->create_publisher<std_msgs::msg::Bool>("/arrived", 1);
+  speak_pub = this->create_publisher<std_msgs::msg::String>("/speak", 1);
 
   destination_sub = this->create_subscription<roomba_msgs::msg::MultifloorPoint>(
       "/multifloor_destination", 10, std::bind(&MasterNavigator::destination_callback, this, std::placeholders::_1));
@@ -107,8 +108,71 @@ void MasterNavigator::navigate_to_goal(NavigateClientT::Goal& goal)
       std::bind(&MasterNavigator::navigation_result_callback, this, std::placeholders::_1);
   send_goal_options.goal_response_callback =
       std::bind(&MasterNavigator::navigation_goal_response_callback, this, std::placeholders::_1);
+  send_goal_options.feedback_callback =
+      std::bind(&MasterNavigator::navigation_feedback_callback, this, std::placeholders::_1, std::placeholders::_2);
 
   future_navigation_handle = navigation_server->async_send_goal(goal, send_goal_options);
+}
+
+void MasterNavigator::navigation_feedback_callback(const rclcpp_action::ClientGoalHandle<NavigateClientT>::SharedPtr,
+                                                   const std::shared_ptr<const NavigateClientT::Feedback> feedback)
+{
+  if (!feedback)
+  {
+    // this is probably bad, but it really doesn't matter
+    return;
+  }
+
+  if (feedback->estimated_time_remaining.sec < 30)
+  {
+    this->send_spoken_instruction();
+  }
+}
+
+void MasterNavigator::send_spoken_instruction() const
+{
+  const size_t num_points = path.points.size();
+  std_msgs::msg::String spoken_text;
+  if (path_idx >= num_points || path_idx == 0)
+  {
+    return;
+  }
+  else if (path_idx + 1 == num_points)
+  {
+    spoken_text.data = "Approaching Destination";
+  }
+  else
+  {
+    const auto prev = path.points.at(path_idx - 1);
+    const auto curr = path.points.at(path_idx);
+    const auto next = path.points.at(path_idx);
+
+    if (curr.floor_id != next.floor_id)
+    {
+      spoken_text.data = "Approaching Elevator";
+    }
+    else
+    {
+      const auto prev_heading = std::atan2(prev.point.y - curr.point.y, prev.point.x - curr.point.x);
+      const auto next_heading = std::atan2(next.point.y - curr.point.y, next.point.x - curr.point.x);
+      const auto delta_heading = next_heading - prev_heading;
+
+      if (std::abs(delta_heading) < 0.3)
+      {
+        spoken_text.data = "Approaching intersection, procede straight";
+      }
+      else if (delta_heading < 0)
+      {
+        spoken_text.data = "Approaching intersection, turn left";
+      }
+      else
+      {
+        spoken_text.data = "Approaching intersection, turn right";
+      }
+    }
+  }
+
+  this->speak_pub->publish(std::move(spoken_text));
 }
 
 void MasterNavigator::traverse_elevator(ElevatorClientT::Goal& goal)
