@@ -15,10 +15,12 @@ def generate_launch_description():
     simulation = LaunchConfiguration('simulation')
     localization = LaunchConfiguration('localization')
     shit_lidar = LaunchConfiguration('shit_lidar')
+    fake_elevator = LaunchConfiguration('fake_elevator')
 
     simulation_arg = DeclareLaunchArgument("simulation", default_value='True')
     localization_arg = DeclareLaunchArgument("localization", default_value='False')
     shit_lidar_arg = DeclareLaunchArgument('shit_lidar', default_value='False')
+    fake_elevator_arg = DeclareLaunchArgument('fake_elevator', default_value='True')
 
     slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
                                     'config', 'mapper_params_online_async.yaml')
@@ -128,7 +130,15 @@ def generate_launch_description():
             package='elevator_traverser',
             executable='elevator_traverser',
             name='elevator_traverser',
-            output='screen'
+            output='screen',
+            condition=IfCondition(PythonExpression(['not ', fake_elevator]))
+            )
+    dummy_elevator_traverser = Node(
+            package='dummy_elevator_traverser',
+            executable='dummy_elevator_traverser',
+            name='dummy_elevator_traverser',
+            output='screen',
+            condition=IfCondition(PythonExpression(['not ', fake_elevator]))
             )
 
     master_navigator = Node(
@@ -138,21 +148,22 @@ def generate_launch_description():
             output='screen'
             )
 
-   # apriltag_launch = IncludeLaunchDescription(
-   #         PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('apriltag_ros'), 'launch', 'tag_36h11_all.launch.py')]), condition=IfCondition(PythonExpression(['not ', simulation]))
-   #         )
+    apriltag_launch = IncludeLaunchDescription(
+            AnyLaunchDescriptionSource([os.path.join(get_package_share_directory('apriltag_ros'), 'launch', 'v4l2_36h11.launch.yml')]), condition=IfCondition(PythonExpression(['not ', simulation]))
+            )
 
-   # apriltag_node = Node(
-   #         package='apriltag_ros',
-   #         executable='apriltag_node',
-   #         condition=IfCondition(PythonExpression([simulation])),
-   #         remappings=[('/image_rect', '/george_cam/image_raw'),
-   #                     ('/camera_info','/george_cam/camera_info')]
-   #         )
+    apriltag_node = Node(
+            package='apriltag_ros',
+            executable='apriltag_node',
+            condition=IfCondition(PythonExpression([simulation])),
+            remappings=[('/image_rect', '/george_cam/image_raw'),
+                        ('/camera_info','/george_cam/camera_info')]
+            )
 
 
 
     ld = LaunchDescription([
+        fake_elevator_arg,
         simulation_arg,
         localization_arg,
         shit_lidar_arg,
@@ -166,10 +177,11 @@ def generate_launch_description():
         localization_launch,
         velodyne_launch,
         lidar_node,
-#        elevator_traverser,
-    #    apriltag_launch,
-    #       master_navigator,
-    #    apriltag_node
+        elevator_traverser,
+        dummy_elevator_traverser,
+        apriltag_launch,
+        master_navigator,
+        apriltag_node
         ])
 
     return ld;
