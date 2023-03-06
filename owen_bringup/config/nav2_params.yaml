@@ -172,11 +172,11 @@ global_costmap:
         enabled: True
         observation_sources: scan
         scan:
-          topic: /velodyne_points
+          topic: /scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
-          data_type: "PointCloud2"
+          data_type: "LaserScan"
           raytrace_max_range: 5.0
           raytrace_min_range: 0.0
           obstacle_max_range: 4.5
@@ -206,11 +206,11 @@ local_costmap:
         enabled: True
         observation_sources: scan
         scan:
-          topic: /velodyne_points
+          topic: /scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
-          data_type: "PointCloud2"
+          data_type: "LaserScan"
           raytrace_max_range: 8.0
           raytrace_min_range: 0.0
           obstacle_max_range: 9.5

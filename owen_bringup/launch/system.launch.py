@@ -39,19 +39,19 @@ def generate_launch_description():
                     condition=IfCondition(PythonExpression([localization]))
         )
  
-#    localization_launch = Node(
-#            parameters=[
-#                slam_params_file
-#            ],
-#            package='slam_toolbox',
-#            executable='localization_slam_toolbox_node',
-#            name='slam_toolbox',
-#            output='screen',
-#            condition=IfCondition(PythonExpression([localization]))
-#        )
+   # localization_launch = Node(
+   #         parameters=[
+   #             slam_params_file
+   #         ],
+   #         package='slam_toolbox',
+   #         executable='localization_slam_toolbox_node',
+   #         name='slam_toolbox',
+   #         output='screen',
+   #         condition=IfCondition(PythonExpression([localization]))
+   #     )
 
 
-#    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
+    localization_launch = Node(package='owen_bringup', executable='map_switcher.py', output='screen', name='map_switcher', condition=IfCondition(PythonExpression([localization])))
 
     velodyne_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource([
                                                 os.path.join(get_package_share_directory('velodyne'), 
