@@ -87,18 +87,18 @@ controller_server:
       debug_trajectory_details: True
       min_vel_x: -0.1
       min_vel_y: 0.0
-      max_vel_x: 1.0
+      max_vel_x: 0.5
       max_vel_y: 0.0
       max_vel_theta: 1.6
       min_speed_xy: -0.1
-      max_speed_xy: 1.0
+      max_speed_xy: 0.6
       min_speed_theta: -1.6
       # Add high threshold velocity for turtlebot 3 issue.
       # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-      acc_lim_x: 0.2
+      acc_lim_x: 0.1
       acc_lim_y: 0.0
       acc_lim_theta: 0.5
-      decel_lim_x: -0.2
+      decel_lim_x: -0.1
       decel_lim_y: 0.0
       decel_lim_theta: -0.5
       vx_samples: 20
@@ -143,27 +143,6 @@ global_costmap:
       width: 50
       height: 50
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-      semantic_map:
-        plugin: "semantic_costmap_plugin::SemanticMap"
-        enabled: true
-        no_pass: ["block1", "block2"]
-        block1:
-          xmin: 0.0
-          xmax: 0.5
-          ymin: 0.0
-          ymax: 0.5
-          floor: "1"
-          cost: 254.0
-        block2:
-          xmin: 1.0
-          xmax: 1.5
-          ymin: 0.0
-          ymax: 0.5
-          floor: "1"
-          cost: 254.0
-      expand_goal:
-        plugin: "expand_to_goal_costmap_plugin::ExpandToGoal"
-        map_subscribe_transient_local: True
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
