@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(roomba_msgs REQUIRED)
 find_package(owen_common REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 add_executable(owen_navigation_node 
   src/owen_navigation_node.cpp 
@@ -19,8 +21,10 @@ add_executable(owen_navigation_node
   src/mapping/Map.cpp
   src/mapping/MapManager.cpp
   src/mapping/ObstacleSourceFactory.cpp
+  src/mapping/StaticMapObstacleSource.cpp
   src/PathFollowerFactory.cpp
-  src/PurePursuit.cpp)
+  src/PurePursuit.cpp
+  )
 target_include_directories(owen_navigation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -30,6 +34,8 @@ ament_target_dependencies(
   "rclcpp"
   "roomba_msgs"
   owen_common
+  nav_msgs
+  geometry_msgs
 )
 
 install(TARGETS owen_navigation_node
