@@ -12,7 +12,7 @@ class MapManager {
 
   const Map& GetMap() const { return map; }
 
-  void UpdateMap();
+  void UpdateMap(const owen_common::types::Pose2D& pose);
 
  private:
   Map map;

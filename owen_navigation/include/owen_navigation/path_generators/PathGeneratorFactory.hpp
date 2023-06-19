@@ -6,6 +6,7 @@
 namespace Navigation {
 
 std::shared_ptr<PathGenerators::BasePathGenerator> GetPathGenerator(
-    rclcpp::Node& node, const std::string& name);
+    rclcpp::Node& node, const std::string& name,
+    const std::shared_ptr<Mapping::MapManager>& map);
 
-}
+}  // namespace Navigation

@@ -8,9 +8,11 @@ namespace Navigation::PathGenerators {
 
 class AStarNavigator : public BasePathGenerator {
  public:
-  explicit AStarNavigator(rclcpp::Node& node);
+  AStarNavigator(rclcpp::Node& node,
+                 const std::shared_ptr<Mapping::MapManager>& map);
 
-  std::vector<owen_common::types::Point2D> GeneratePath() override;
+  std::vector<owen_common::types::Point2D> GeneratePath(
+      const owen_common::types::Pose2D& pose) override;
 
   bool HasNewCommand() override;
 

@@ -6,8 +6,9 @@ namespace Constants {
 const std::string Name = "AStar";
 }  // namespace Constants
 
-AStarNavigator::AStarNavigator(rclcpp::Node& node)
-    : BasePathGenerator(node, Constants::Name) {
+AStarNavigator::AStarNavigator(rclcpp::Node& node,
+                               const std::shared_ptr<Mapping::MapManager>& map)
+    : BasePathGenerator(node, Constants::Name, map) {
   destinationSub = node.create_subscription<geometry_msgs::msg::PoseStamped>(
       "/goal_pose", 1, [this](const geometry_msgs::msg::PoseStamped& msg) {
         destination.SetData({msg.pose.position.x, msg.pose.position.y});
@@ -17,7 +18,8 @@ AStarNavigator::AStarNavigator(rclcpp::Node& node)
       node.get_parameter_or("astar_planning_resolution", 0.1);
 }
 
-std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath() {
+std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
+    const owen_common::types::Pose2D& pose) {
   std::vector<owen_common::types::Point2D> ret;
 
   return ret;

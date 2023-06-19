@@ -18,7 +18,9 @@ add_executable(owen_navigation_node
   src/PathGeneratorFactory.cpp 
   src/mapping/Map.cpp
   src/mapping/MapManager.cpp
-  src/mapping/ObstacleSourceFactory.cpp)
+  src/mapping/ObstacleSourceFactory.cpp
+  src/PathFollowerFactory.cpp
+  src/PurePursuit.cpp)
 target_include_directories(owen_navigation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

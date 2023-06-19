@@ -27,10 +27,10 @@ MapManager::MapManager(rclcpp::Node& node) {
   }
 }
 
-void MapManager::UpdateMap() {
+void MapManager::UpdateMap(const owen_common::types::Pose2D& pose) {
   Map::MapUpdate update;
   for (const auto& source : this->obstacleSources) {
-    const auto mapUpdates = source->GetMapUpdate();
+    const auto mapUpdates = source->GetMapUpdate(pose);
     update.insert(update.end(), mapUpdates.begin(), mapUpdates.end());
   }
 
