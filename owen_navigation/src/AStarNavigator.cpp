@@ -20,8 +20,18 @@ AStarNavigator::AStarNavigator(rclcpp::Node& node,
 
 std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
     const owen_common::types::Pose2D& pose) {
-  std::vector<owen_common::types::Point2D> ret;
+  queue = std::priority_queue<Node, std::vector<Node>, std::greater<>>();
+  queue.push({{pose.x, pose.y},
+              0.0,
+              destination.GetDataRef().distanceFromPoint({pose.x, pose.y})});
 
+  while (!queue.empty() && !this->isDestinationNode(queue.top())) {
+    const auto top = queue.top();
+    queue.pop();
+    this->exploreAroundNode(top);
+  }
+
+  std::vector<owen_common::types::Point2D> ret;
   return ret;
 }
 
@@ -31,6 +41,32 @@ bool AStarNavigator::HasNewCommand() {
   return tmp;
 }
 
+bool AStarNavigator::isDestinationNode(const Node& n) {
+  return std::abs(n.point.x - destination.GetDataRef().x) <=
+             params.planningResolution &&
+         std::abs(n.point.y - destination.GetDataRef().y) <=
+             params.planningResolution;
+}
+
 bool AStarNavigator::HasUpdatedPath() const { return false; }
+
+void AStarNavigator::exploreAroundNode(const Node& n) {
+  addNodeWithOffset(n, {params.planningResolution, 0.0});
+  addNodeWithOffset(n, {-params.planningResolution, 0.0});
+  addNodeWithOffset(n, {0.0, params.planningResolution});
+  addNodeWithOffset(n, {0.0, -params.planningResolution});
+}
+
+void AStarNavigator::addNodeWithOffset(
+    const Node& n, const owen_common::types::Point2D& offset) {
+  Node newNode = n;
+  newNode.point = newNode.point + offset;
+  if (map->GetMap().IsOccupied(newNode.point)) {
+    return;
+  }
+  newNode.heuristic = newNode.point.distanceFromPoint(destination.GetDataRef());
+  queue.push(newNode);
+  newNode.cost += newNode.point.distanceFromPoint(n.point);
+}
 
 }  // namespace Navigation::PathGenerators
