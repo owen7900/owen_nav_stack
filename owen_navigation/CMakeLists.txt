@@ -12,6 +12,7 @@ find_package(roomba_msgs REQUIRED)
 find_package(owen_common REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 add_executable(owen_navigation_node 
   src/owen_navigation_node.cpp 
@@ -36,6 +37,7 @@ ament_target_dependencies(
   owen_common
   nav_msgs
   geometry_msgs
+  tf2
 )
 
 install(TARGETS owen_navigation_node

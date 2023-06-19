@@ -48,12 +48,16 @@ class Map {
   Point2D GetPoint(const IntPoint& pt) const;
   Point2D GetPoint(size_t idx) const;
 
-  /// if the map to be updated has a smaller resolution, then the cells that
-  /// correspond to a given cell are ored together.
   void UpdateMap(const MapUpdate& update);
   void UpdateMap(const Cell& update);
 
-  // Add Polygon shape update here
+  size_t GetWidth() const { return width; };
+  size_t GetHeight() const { return height; };
+
+  Point2D GetOrigin() const { return origin; };
+  double GetResolution() const { return resolution; };
+
+  const std::vector<bool>& GetData() const { return map; };
 
  private:
   std::vector<bool> map;
