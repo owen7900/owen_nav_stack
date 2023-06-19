@@ -7,6 +7,7 @@
 #include "owen_navigation/mapping/obstacle_sources/BaseObstacleSource.hpp"
 namespace Navigation::Mapping::ObstacleSources {
 class StaticMapObstacleSource : public BaseObstacleSource {
+ public:
   explicit StaticMapObstacleSource(rclcpp::Node& n);
 
   Map::MapUpdate GetMapUpdate(
