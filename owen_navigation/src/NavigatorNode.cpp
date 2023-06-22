@@ -1,5 +1,7 @@
 #include "owen_navigation/NavigatorNode.hpp"
 
+#include <tf2/LinearMath/Quaternion.h>
+
 #include <random>
 #include <rclcpp/logger.hpp>
 
@@ -50,6 +52,22 @@ NavigatorNode::NavigatorNode(const std::string& name)
   }
 
   commandPub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+
+  poseSub =
+      this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+          "pose", 1,
+          [this](const geometry_msgs::msg::PoseWithCovarianceStamped& msg) {
+            Pose pose;
+            pose.x = msg.pose.pose.position.x;
+            pose.y = msg.pose.pose.position.y;
+            tf2::Quaternion qt;
+            qt.setX(msg.pose.pose.orientation.x);
+            qt.setY(msg.pose.pose.orientation.y);
+            qt.setZ(msg.pose.pose.orientation.z);
+            qt.setW(msg.pose.pose.orientation.w);
+            pose.yaw = qt.getAxis().getZ();
+            this->pose.SetData(pose);
+          });
 
   dataTimeout =
       this->get_parameter_or("data_timeout", Constants::DefaultPoseTimeout);

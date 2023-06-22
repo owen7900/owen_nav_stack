@@ -1,5 +1,6 @@
 #pragma once
 
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <string>
@@ -43,6 +44,9 @@ class NavigatorNode : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr controlLoopTimer;
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr commandPub;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+      poseSub;
 
   std::unique_ptr<PathFollowers::BasePathFollower> pathFollower;
 
