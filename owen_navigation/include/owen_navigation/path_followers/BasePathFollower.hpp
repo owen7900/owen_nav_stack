@@ -1,6 +1,6 @@
 #pragma once
 
-#include <geometry_msgs/msg/detail/twist__struct.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <memory>
 #include <utility>
 #include <vector>

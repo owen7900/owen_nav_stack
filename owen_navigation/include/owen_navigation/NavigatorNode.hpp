@@ -8,6 +8,7 @@
 #include "owen_navigation/mapping/MapManager.hpp"
 #include "owen_navigation/path_followers/BasePathFollower.hpp"
 #include "owen_navigation/path_generators/BasePathGenerator.hpp"
+#include "owen_navigation/recovery_behaviours/BaseRecoveryBehaviour.hpp"
 
 namespace Navigation {
 
@@ -29,6 +30,14 @@ class NavigatorNode : public rclcpp::Node {
 
   std::shared_ptr<PathGenerators::BasePathGenerator> activeGenerator;
 
+  std::vector<std::shared_ptr<RecoveryBehaviours::BaseRecoveryBehaviour>>
+      recoveryBehaviours;
+
+  std::shared_ptr<RecoveryBehaviours::BaseRecoveryBehaviour>
+      activeRecoveryBehaviour;
+
+  double recoveryBehaviourStartTime;
+
   std::shared_ptr<Mapping::MapManager> map;
 
   rclcpp::TimerBase::SharedPtr controlLoopTimer;
@@ -40,6 +49,7 @@ class NavigatorNode : public rclcpp::Node {
   owen_common::TimeoutData<Pose> pose;
 
   double dataTimeout;
+  double maxRecoveryTime;
 };
 
 }  // namespace Navigation

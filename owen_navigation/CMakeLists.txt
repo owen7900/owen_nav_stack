@@ -25,6 +25,8 @@ add_executable(owen_navigation_node
   src/mapping/StaticMapObstacleSource.cpp
   src/PathFollowerFactory.cpp
   src/PurePursuit.cpp
+  src/RecoveryBehaviourFactory.cpp
+  src/BackUpBehaviour.cpp
   )
 target_include_directories(owen_navigation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
