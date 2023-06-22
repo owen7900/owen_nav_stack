@@ -23,6 +23,7 @@ class BasePathFollower {
 
   void UpdatePath(const Path& p) { path.SetData(p); }
   void UpdatePath(Path&& p) { path.SetData(p); }
+  bool IsArrived() const { return isArrived; }
 
   virtual std::optional<Command> CalculateCommand(
       const owen_common::types::Pose2D& pose) = 0;
@@ -30,5 +31,6 @@ class BasePathFollower {
  protected:
   std::shared_ptr<Mapping::MapManager> map;
   owen_common::types::MailboxData<Path> path;
+  bool isArrived;
 };
 }  // namespace Navigation::PathFollowers

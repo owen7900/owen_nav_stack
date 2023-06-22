@@ -35,6 +35,12 @@ class Map {
     return IsInBounds(idx) ? map.at(idx) : false;
   };
 
+  double GetClosestObstacleDistance(
+      const Point2D& pt,
+      double searchRadius = std::numeric_limits<double>::max()) const;
+
+  bool IsSafe(const Point2D& pt, double vehicleRadius = 0) const;
+
   bool IsInBounds(const Point2D& pt) const;
   bool IsInBounds(const IntPoint& pt) const;
   bool IsInBounds(size_t idx) const;
@@ -58,6 +64,8 @@ class Map {
   double GetResolution() const { return resolution; };
 
   const std::vector<bool>& GetData() const { return map; };
+
+  Point2D GetMaxPoint() const;
 
  private:
   std::vector<bool> map;

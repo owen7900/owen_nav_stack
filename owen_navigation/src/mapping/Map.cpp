@@ -69,6 +69,10 @@ size_t Map::GetIdx(const Point2D& pt) const {
 
 size_t Map::GetIdx(const IntPoint& pt) const { return pt.x + width * pt.y; }
 
+Map::Point2D Map::GetMaxPoint() const {
+  return origin + Point2D{width * resolution, height * resolution};
+}
+
 Map::IntPoint Map::GetCellCoords(const Point2D& pt) const {
   return {static_cast<size_t>(pt.x / width),
           static_cast<size_t>(pt.y / height)};
@@ -121,6 +125,60 @@ void Map::UpdateMap(const MapUpdate& update) {
   for (const auto& cell : update) {
     UpdateMap(cell);
   }
+}
+
+double Map::GetClosestObstacleDistance(const Point2D& pt,
+                                       double searchRadius) const {
+  const size_t searchRadiusX =
+      std::min<size_t>(width / 2, searchRadius / resolution);
+  const size_t searchRadiusY =
+      std::min<size_t>(height / 2, searchRadius / resolution);
+  double ret = std::numeric_limits<double>::max();
+  const auto startPt = GetCellCoords(pt);
+
+  for (size_t y = 0; y < searchRadiusY; ++y) {
+    for (size_t x = 0; x < searchRadiusX; ++x) {
+      auto checkPt = startPt + IntPoint{x, y};
+      if (IsOccupied(checkPt)) {
+        ret = std::min(ret, std::pow(x, 2) + std::pow(y, 2));
+        continue;
+      }
+      checkPt = startPt + IntPoint{-x, -y};
+      if (startPt.x >= x && startPt.y >= y && IsOccupied(checkPt)) {
+        ret = std::min(ret, std::pow(x, 2) + std::pow(y, 2));
+        continue;
+      }
+      checkPt = startPt + IntPoint{-x, y};
+      if (startPt.x >= x && IsOccupied(checkPt)) {
+        ret = std::min(ret, std::pow(x, 2) + std::pow(y, 2));
+        continue;
+      }
+      checkPt = startPt + IntPoint{x, -y};
+      if (startPt.y >= y && IsOccupied(checkPt)) {
+        ret = std::min(ret, std::pow(x, 2) + std::pow(y, 2));
+        continue;
+      }
+    }
+  }
+
+  return std::sqrt(ret) * resolution;
+}
+
+bool Map::IsSafe(const Point2D& pt, double vehicleRadius) const {
+  const size_t searchRadius = vehicleRadius / resolution;
+  const auto startPt = GetCellCoords(pt);
+
+  for (size_t y = startPt.y > searchRadius ? startPt.y - searchRadius : 0;
+       y < searchRadius; ++y) {
+    for (size_t x = startPt.x > searchRadius ? startPt.x - searchRadius : 0;
+         x < searchRadius; ++x) {
+      if (IsOccupied(IntPoint{x, y})) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 }  // namespace Navigation::Mapping

@@ -10,6 +10,32 @@ class PurePursuit : public BasePathFollower {
 
   std::optional<BasePathFollower::Command> CalculateCommand(
       const owen_common::types::Pose2D& pose) override;
+
+ private:
+  size_t getTargetIdx() const;
+  size_t getClosestPointAlongPath() const;
+
+  rcl_interfaces::msg::SetParametersResult updateParams(
+      const std::vector<rclcpp::Parameter>& params);
+
+  void setDefaultParamValues();
+
+ private:
+  struct Params {
+    double lookaheadDistance;
+    double successRadius;
+    double turnGain;
+    double minObstacleDistance;
+    double obstacleTurnLimit;
+    double forwardGain;
+    double angularLinearWeight;
+    double maxForwardVel;
+  };
+  Params params;
+
+  owen_common::types::Pose2D pose;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
+      paramsCallbackHandle;
 };
 
 }  // namespace Navigation::PathFollowers
