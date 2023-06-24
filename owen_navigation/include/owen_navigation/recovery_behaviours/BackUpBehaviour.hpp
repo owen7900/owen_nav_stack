@@ -20,7 +20,7 @@ class BackUp : public BaseRecoveryBehaviour {
   rcl_interfaces::msg::SetParametersResult updateParams(
       const std::vector<rclcpp::Parameter>& paramVec);
 
-  void setDefaultParamValues();
+  void setDefaultParamValues(rclcpp::Node& n);
 
  private:
   struct Params {

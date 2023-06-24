@@ -18,7 +18,7 @@ class PurePursuit : public BasePathFollower {
   rcl_interfaces::msg::SetParametersResult updateParams(
       const std::vector<rclcpp::Parameter>& params);
 
-  void setDefaultParamValues();
+  void setDefaultParamValues(rclcpp::Node& n);
 
  private:
   struct Params {

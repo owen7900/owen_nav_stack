@@ -2,8 +2,10 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <random>
 #include <rclcpp/logger.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "owen_navigation/path_followers/PathFollowerFactory.hpp"
 #include "owen_navigation/path_generators/PathGeneratorFactory.hpp"
@@ -18,9 +20,16 @@ constexpr double DefaultMaxRecoveryTime = 5.0;
 
 NavigatorNode::NavigatorNode(const std::string& name)
     : rclcpp::Node(name), recoveryBehaviourStartTime(0.0) {
+  tfBuffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  tfListener = std::make_shared<tf2_ros::TransformListener>(*tfBuffer);
+
   this->controlLoopTimer = this->create_wall_timer(
       std::chrono::duration<double>(0.05), [this] { controlLoop(); });
   map = std::make_shared<Mapping::MapManager>(*this);
+  if (!map) {
+    RCLCPP_FATAL(this->get_logger(), "Map is null");
+    throw -1;
+  }
 
   const auto pathGeneratorsStrings = this->get_parameter_or(
       "path_generators", std::vector<std::string>{"AStar"});
@@ -28,6 +37,8 @@ NavigatorNode::NavigatorNode(const std::string& name)
   for (const auto& generatorString : pathGeneratorsStrings) {
     auto gen = GetPathGenerator(*this, generatorString, map);
     if (gen) {
+      RCLCPP_INFO_STREAM(this->get_logger(),
+                         "Got path generator: " << generatorString);
       this->pathGenerators.push_back(std::move(gen));
     }
   }
@@ -39,6 +50,8 @@ NavigatorNode::NavigatorNode(const std::string& name)
                                                               *this, map);
     if (rec) {
       this->recoveryBehaviours.push_back(rec);
+      RCLCPP_INFO_STREAM(this->get_logger(),
+                         "Got recovery behaviour: " << behaviourString);
     }
   }
 
@@ -53,48 +66,77 @@ NavigatorNode::NavigatorNode(const std::string& name)
 
   commandPub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
-  poseSub =
-      this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-          "pose", 1,
-          [this](const geometry_msgs::msg::PoseWithCovarianceStamped& msg) {
-            Pose pose;
-            pose.x = msg.pose.pose.position.x;
-            pose.y = msg.pose.pose.position.y;
-            tf2::Quaternion qt;
-            qt.setX(msg.pose.pose.orientation.x);
-            qt.setY(msg.pose.pose.orientation.y);
-            qt.setZ(msg.pose.pose.orientation.z);
-            qt.setW(msg.pose.pose.orientation.w);
-            pose.yaw = qt.getAxis().getZ();
-            this->pose.SetData(pose);
-          });
-
   dataTimeout =
       this->get_parameter_or("data_timeout", Constants::DefaultPoseTimeout);
   maxRecoveryTime = this->get_parameter_or("max_recovery_time",
                                            Constants::DefaultMaxRecoveryTime);
 }
 
+void NavigatorNode::updatePose() {
+  try {
+    geometry_msgs::msg::TransformStamped t;
+    t = tfBuffer->lookupTransform("map", "base_footprint", tf2::TimePointZero);
+    geometry_msgs::msg::Pose in;
+    in.orientation.w = 1;
+    geometry_msgs::msg::Pose out;
+    tf2::doTransform(in, out, t);
+
+    owen_common::types::Pose2D pose;
+    pose.x = out.position.x;
+    pose.y = out.position.y;
+    tf2::Quaternion q;
+    tf2::fromMsg(out.orientation, q);
+
+    tf2::Matrix3x3 m(q);
+    double pitch, roll;
+    m.getEulerYPR(pose.yaw, pitch, roll);
+    this->pose.SetData(pose);
+
+  } catch (const tf2::TransformException& ex) {
+    RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s",
+                "base_footprint", "map", ex.what());
+    return;
+  }
+}
+
 void NavigatorNode::controlLoop() {
+  this->updatePose();
   this->map->UpdateMap(pose.GetDataRef());
   for (const auto& gen : pathGenerators) {
     if (gen->HasNewCommand()) {
       this->activeGenerator = gen;
       this->pathFollower->UpdatePath(gen->GeneratePath(pose.GetDataRef()));
+      RCLCPP_INFO_STREAM(this->get_logger(),
+                         "Got a new command from: " << gen->GetName());
     }
   }
 
-  if (this->activeGenerator->HasUpdatedPath()) {
+  if (this->activeGenerator && this->activeGenerator->HasUpdatedPath()) {
     this->pathFollower->UpdatePath(
         this->activeGenerator->GeneratePath(pose.GetDataRef()));
+    RCLCPP_INFO_STREAM(
+        this->get_logger(),
+        "Got an updated path from: " << this->activeGenerator->GetName());
   }
 
-  if (this->pose.GetDataAge() > dataTimeout) {
+  if (!this->activeGenerator) {
+    RCLCPP_INFO_STREAM(this->get_logger(), "No active path generator");
+    this->commandPub->publish({});
+  } else if (this->pose.GetDataAge() > dataTimeout) {
+    RCLCPP_WARN_STREAM(this->get_logger(), "Have outdated pose, is "
+                                               << this->pose.GetDataAge()
+                                               << "s old. Stopping vehicle");
     this->commandPub->publish({});
   } else {
     auto command = this->pathFollower->CalculateCommand(pose.GetDataRef());
     if (command.has_value()) {
+      RCLCPP_INFO_STREAM(this->get_logger(), "Sending command"
+                                                 << command->linear.x << " "
+                                                 << command->angular.z);
       this->commandPub->publish(command.value());
+      if (this->pathFollower->IsArrived()) {
+        activeGenerator = nullptr;
+      }
     } else {
       this->executeRecovery();
     }
@@ -102,6 +144,7 @@ void NavigatorNode::controlLoop() {
 }
 
 void NavigatorNode::executeRecovery() {
+  RCLCPP_INFO(this->get_logger(), "Executing recovery");
   if (recoveryBehaviours.empty()) {
     this->commandPub->publish({});
   }

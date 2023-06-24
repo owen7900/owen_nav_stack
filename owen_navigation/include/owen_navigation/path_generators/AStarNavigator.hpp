@@ -1,8 +1,10 @@
 #pragma once
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <queue>
 
 #include "owen_common/MailboxData.hpp"
+#include "owen_common/Point2D.hpp"
 #include "owen_navigation/path_generators/BasePathGenerator.hpp"
 
 namespace Navigation::PathGenerators {
@@ -11,8 +13,11 @@ struct Node {
   owen_common::types::Point2D point;
   double cost;
   double heuristic;
-  bool operator>(const Node& n) {
-    return (this->cost + this->heuristic) > (n.cost + n.heuristic);
+};
+
+struct NodeHash {
+  size_t operator()(const Node& n) const {
+    return owen_common::types::BasePointHash{}(n.point);
   }
 };
 
@@ -34,11 +39,18 @@ class AStarNavigator : public BasePathGenerator {
                          const owen_common::types::Point2D& offset);
   bool isDestinationNode(const Node& n);
 
+  void publishDebugPath(
+      const std::vector<owen_common::types::Point2D>& path) const;
+
  private:
   owen_common::types::MailboxData<owen_common::types::Point2D> destination;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr
       destinationSub;
+
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr debugPathPub;
+
+  std::unordered_map<Node, Node, NodeHash> prevNodes;
 
   struct Parameters {
     float planningResolution;

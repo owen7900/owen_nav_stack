@@ -22,7 +22,7 @@ class MailboxData {
 
   inline const T& PeekDataRef() const { return data; }
 
-  inline bool HasNewData() const { return HasNewData(); };
+  inline bool HasNewData() const { return hasNewData; };
 
   inline void SetData(const T& t) {
     hasNewData = true;

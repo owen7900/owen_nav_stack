@@ -22,7 +22,7 @@ const std::vector<std::string> AllParameters{
 
 constexpr double DefaultLookaheadDistance = 0.5;
 constexpr double DefaultSuccessRadius = 0.1;
-constexpr double DefaultTurnGain = 1.0;
+constexpr double DefaultTurnGain = 0.5;
 constexpr double DefaultMinObstacleDistance = 0.25;
 constexpr double DefaultObstacleTurnLimit = 0.5;
 constexpr double DefaultForwardGain = 0.5;
@@ -34,67 +34,68 @@ constexpr double DefaultMaxForwardVel = 1.0;
 PurePursuit::PurePursuit(rclcpp::Node& n,
                          const std::shared_ptr<Mapping::MapManager>& map)
     : BasePathFollower(map), params{}, pose{} {
+  this->setDefaultParamValues(n);
   this->paramsCallbackHandle = n.add_on_set_parameters_callback(
       [this](const auto& params) { return updateParams(params); });
   this->updateParams(n.get_parameters(Constants::AllParameters));
 }
 
-void PurePursuit::setDefaultParamValues() {
-  params.lookaheadDistance = Constants::DefaultLookaheadDistance;
-  params.successRadius = Constants::DefaultSuccessRadius;
-  params.minObstacleDistance = Constants::DefaultMinObstacleDistance;
-  params.turnGain = Constants::DefaultTurnGain;
-  params.obstacleTurnLimit = Constants::DefaultObstacleTurnLimit;
-  params.forwardGain = Constants::DefaultForwardGain;
-  params.angularLinearWeight = Constants::DefaultAngularLinearWeight;
-  params.maxForwardVel = Constants::DefaultMaxForwardVel;
+void PurePursuit::setDefaultParamValues(rclcpp::Node& n) {
+  n.declare_parameter(Constants::LookaheadDistanceName,
+                      Constants::DefaultLookaheadDistance);
+  n.declare_parameter(Constants::SuccessRadiusName,
+                      Constants::DefaultSuccessRadius);
+  n.declare_parameter(Constants::MinObstacleDistanceName,
+                      Constants::DefaultMinObstacleDistance);
+  n.declare_parameter(Constants::TurnGainName, Constants::DefaultTurnGain);
+  n.declare_parameter(Constants::ObstacleTurnLimitName,
+                      Constants::DefaultObstacleTurnLimit);
+  n.declare_parameter(Constants::ForwardGainName,
+                      Constants::DefaultForwardGain);
+  n.declare_parameter(Constants::AngularLinearWeightName,
+                      Constants::DefaultAngularLinearWeight);
+  n.declare_parameter(Constants::MaxForwardVelName,
+                      Constants::DefaultMaxForwardVel);
 }
 
 rcl_interfaces::msg::SetParametersResult PurePursuit::updateParams(
     const std::vector<rclcpp::Parameter>& inParams) {
-  rcl_interfaces::msg::SetParametersResult res;
   for (const auto& param : inParams) {
     if (param.get_name() == Constants::LookaheadDistanceName) {
       params.lookaheadDistance = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::SuccessRadiusName) {
       params.successRadius = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::TurnGainName) {
       params.turnGain = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::MinObstacleDistanceName) {
       params.minObstacleDistance = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::ObstacleTurnLimitName) {
       params.obstacleTurnLimit = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::ForwardGainName) {
-      params.successRadius = param.as_double();
-      res.successful = true;
+      params.forwardGain = param.as_double();
       continue;
     }
     if (param.get_name() == Constants::AngularLinearWeightName) {
       params.angularLinearWeight = param.as_double();
-      res.successful = true;
       continue;
     }
     if (param.get_name() == Constants::MaxForwardVelName) {
       params.maxForwardVel = param.as_double();
-      res.successful = true;
       continue;
     }
   }
+  rcl_interfaces::msg::SetParametersResult res;
+  res.successful = true;
   return res;
 }
 
@@ -126,6 +127,9 @@ std::optional<BasePathFollower::Command> PurePursuit::CalculateCommand(
 
   if (deltaDist <= params.successRadius) {
     isArrived = true;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger(Constants::Name),
+                       "Arrived, delta dist: " << deltaDist << " sucRad: "
+                                               << params.successRadius);
     return {ret};
   }
   if (deltaDist > params.lookaheadDistance + 1.0) {

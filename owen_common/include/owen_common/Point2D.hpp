@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 namespace owen_common::types {
 
 template <typename T>
@@ -25,6 +26,23 @@ struct BasePoint2D {
 
   double distanceFromPoint(const BasePoint2D& other) const {
     return std::sqrt(std::pow(other.x - x, 2) + std::pow(other.y - y, 2));
+  }
+
+  template <typename U>
+  bool operator==(const BasePoint2D<U>& p) const {
+    return p.x == x && p.y == y;
+  }
+
+  template <typename U>
+  bool operator!=(const BasePoint2D<U>& p) const {
+    return !(p == *this);
+  }
+};
+
+struct BasePointHash {
+  template <typename T>
+  size_t operator()(const BasePoint2D<T>& pt) const {
+    return std::hash<T>{}(pt.x) ^ std::hash<T>{}(pt.y);
   }
 };
 

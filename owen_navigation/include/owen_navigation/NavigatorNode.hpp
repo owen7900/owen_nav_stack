@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -25,6 +28,8 @@ class NavigatorNode : public rclcpp::Node {
 
   void executeRecovery();
 
+  void updatePose();
+
  private:
   std::vector<std::shared_ptr<PathGenerators::BasePathGenerator>>
       pathGenerators;
@@ -45,10 +50,10 @@ class NavigatorNode : public rclcpp::Node {
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr commandPub;
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
-      poseSub;
-
   std::unique_ptr<PathFollowers::BasePathFollower> pathFollower;
+
+  std::shared_ptr<tf2_ros::TransformListener> tfListener;
+  std::unique_ptr<tf2_ros::Buffer> tfBuffer;
 
   owen_common::TimeoutData<Pose> pose;
 

@@ -10,7 +10,7 @@ const std::vector<std::string> AllParams{BackUpSpeedName};
 }  // namespace Constants
 
 BackUp::BackUp(rclcpp::Node& n) : params{} {
-  this->setDefaultParamValues();
+  this->setDefaultParamValues(n);
   paramsCallbackHandle = n.add_on_set_parameters_callback(
       [this](const auto& params) { return this->updateParams(params); });
   this->updateParams(n.get_parameters(Constants::AllParams));
@@ -19,21 +19,19 @@ BackUp::BackUp(rclcpp::Node& n) : params{} {
 rcl_interfaces::msg::SetParametersResult BackUp::updateParams(
     const std::vector<rclcpp::Parameter>& paramVec) {
   rcl_interfaces::msg::SetParametersResult ret;
+  ret.successful = true;
   for (const auto& param : paramVec) {
     if (param.get_name() == Constants::BackUpSpeedName) {
       params.backUpSpeed = param.as_double();
-      ret.successful = true;
     }
-  }
-
-  if (!ret.successful) {
-    ret.reason = "No Param names match";
   }
 
   return ret;
 }
 
-void BackUp::setDefaultParamValues() {
+void BackUp::setDefaultParamValues(rclcpp::Node& n) {
+  n.declare_parameter(Constants::BackUpSpeedName,
+                      Constants::DefaultBackUpSpeed);
   params.backUpSpeed = Constants::DefaultBackUpSpeed;
 }
 
