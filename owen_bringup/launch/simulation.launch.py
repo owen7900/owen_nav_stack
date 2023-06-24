@@ -20,7 +20,7 @@ def generate_launch_description():
       get_package_share_directory('create_description'),
       urdf_file_name)
 
-  world = os.path.join(get_package_share_directory('owen_bringup'), 'worlds', 'willowGarage.world')
+  world = os.path.join(get_package_share_directory('owen_bringup'), 'worlds', 'empty_lidar.sdf')
 
   create_desc = get_package_share_directory('create_description')
   print("urdf_file_name : {}".format(urdf_file_name))
@@ -33,6 +33,7 @@ def generate_launch_description():
                  arguments=[
                     '-string', doc.toxml(),
                     '-name', 'create_2',
+                    '-z', '1',
                     '-allow_renaming', 'true'],
                  output='screen')
   load_joint_state_controller = ExecuteProcess(
@@ -49,16 +50,17 @@ def generate_launch_description():
   bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
+        arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+                   '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'],
         output='screen'
     )
   return LaunchDescription([
         bridge,
-        SetEnvironmentVariable(name='IGN_GAZEBO_RESOURCE_PATH',value=[create_desc+"/../"]),
+        SetEnvironmentVariable(name='IGN_GAZEBO_RESOURCE_PATH',value=[create_desc+"/../:/home/owen/.ignition/gazebo/models/"]),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
-            launch_arguments={'gz_args': '-r  -v 4 empty.sdf'}.items(),
+            launch_arguments={'gz_args': '-r  -v 4 ' + world }.items(),
         ),
         Node(
             package='robot_state_publisher',

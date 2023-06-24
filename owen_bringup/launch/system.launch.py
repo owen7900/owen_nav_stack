@@ -14,9 +14,11 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 def generate_launch_description():
     simulation = LaunchConfiguration('simulation')
     localization = LaunchConfiguration('localization')
+    use_nav_2 = LaunchConfiguration('use_nav_2')
 
     simulation_arg = DeclareLaunchArgument("simulation", default_value='True')
     localization_arg = DeclareLaunchArgument("localization", default_value='False')
+    use_nav_2_arg = DeclareLaunchArgument('use_nav_2', default_value='False')
 
     slam_params_file = os.path.join(get_package_share_directory('owen_bringup'),
                                     'config', 'mapper_params_online_async.yaml')
@@ -61,7 +63,16 @@ def generate_launch_description():
     navigation_launch = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('owen_bringup'), 'launch'),
-         '/navigation.launch.py']))
+                                     '/navigation.launch.py']),
+      condition=IfCondition(PythonExpression([use_nav_2])))
+
+    custom_nav = Node(
+            package='owen_navigation',
+            executable='owen_navigation_node',
+            name='owen_navigation_node',
+            condition=IfCondition(PythonExpression(['not ', use_nav_2])),
+            output='screen'
+            )
 
     create_launch = IncludeLaunchDescription(
       AnyLaunchDescriptionSource([os.path.join(
@@ -73,6 +84,9 @@ def generate_launch_description():
         package='system_controller',
         executable='system_controller_node',
         name='system_controller_node',
+        remappings=[('/roomba/cmd_vel', 
+                     PythonExpression(['\'/diff_drive_base_controller/cmd_vel_unstamped\' if ', simulation, 
+                                       ' else \'/roomba/cmd_vel\' ']))]
         #output='screen'
     )
 
@@ -80,6 +94,7 @@ def generate_launch_description():
     ld = LaunchDescription([
         simulation_arg,
         localization_arg,
+        use_nav_2_arg,
         simulation_launch,
         slam_launch,
         system_controller,
@@ -87,6 +102,7 @@ def generate_launch_description():
         navigation_launch,
         localization_launch,
         lidar_node,
+        # custom_nav
         ])
 
     return ld;
