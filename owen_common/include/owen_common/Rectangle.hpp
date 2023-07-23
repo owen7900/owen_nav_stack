@@ -20,6 +20,11 @@ class Rectangle {
   BasePoint2D<T> GetMaxPt() const { return maxPt; };
   BasePoint2D<T> GetMinPt() const { return minPt; };
 
+  friend std::ostream& operator<<(std::ostream& stream, const Rectangle& r) {
+    stream << "{" << r.minPt << ", " << r.maxPt << "}";
+    return stream;
+  }
+
  private:
   BasePoint2D<T> minPt;
   BasePoint2D<T> maxPt;

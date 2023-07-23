@@ -7,12 +7,11 @@
 namespace Navigation::Mapping {
 
 class Map {
- private:
+ public:
   using Point2D = owen_common::types::Point2D;
-  using IntPoint = owen_common::types::BasePoint2D<size_t>;
+  using IntPoint = owen_common::types::BasePoint2D<int>;
   using Rectangle = owen_common::types::Rectangle<double>;
 
- public:
   struct Cell {
     Rectangle bounds{};
     bool state{};
@@ -40,19 +39,21 @@ class Map {
       double searchRadius = std::numeric_limits<double>::max()) const;
 
   bool IsSafe(const Point2D& pt, double vehicleRadius = 0) const;
+  bool IsSafePath(const Point2D& pt, const Point2D& pt2,
+                  double vehicleRadius = 0) const;
 
   bool IsInBounds(const Point2D& pt) const;
   bool IsInBounds(const IntPoint& pt) const;
-  bool IsInBounds(size_t idx) const;
+  bool IsInBounds(int idx) const;
 
-  size_t GetIdx(const Point2D& pt) const;
-  size_t GetIdx(const IntPoint& pt) const;
+  int GetIdx(const Point2D& pt) const;
+  int GetIdx(const IntPoint& pt) const;
 
   IntPoint GetCellCoords(const Point2D& pt) const;
-  IntPoint GetCellCoords(size_t idx) const;
+  IntPoint GetCellCoords(int idx) const;
 
   Point2D GetPoint(const IntPoint& pt) const;
-  Point2D GetPoint(size_t idx) const;
+  Point2D GetPoint(int idx) const;
 
   void UpdateMap(const MapUpdate& update);
   void UpdateMap(const Cell& update);
@@ -67,10 +68,16 @@ class Map {
 
   Point2D GetMaxPoint() const;
 
+  void SetCell(int idx, bool state) {
+    if (IsInBounds(idx)) {
+      map.at(idx) = state;
+    }
+  }
+
  private:
   std::vector<bool> map;
-  size_t width;
-  size_t height;
+  int width;
+  int height;
   Point2D origin;
   double resolution;
 };
