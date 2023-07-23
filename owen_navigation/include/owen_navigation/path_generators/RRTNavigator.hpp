@@ -3,6 +3,7 @@
 namespace Navigation::PathGenerators {
 
 class RRTNavigator : public BaseNavigator {
+  template <typename P>
   friend class PlannerTester;
   using Point2D = owen_common::types::Point2D;
   struct Parameters {
@@ -32,7 +33,7 @@ class RRTNavigator : public BaseNavigator {
 
   bool isPointDestination(const Point2D& pt) const;
 
-  Point2D randomlySampleAround(const Node& n) const;
+  Point2D randomlySamplePoint();
 
  private:
   Parameters rrtParams;

@@ -9,12 +9,13 @@
 
 #include "owen_navigation/path_generators/AStarNavigator.hpp"
 #include "owen_navigation/path_generators/RRTNavigator.hpp"
-
 using Point2D = owen_common::types::Point2D;
 using Pose2D = owen_common::types::Pose2D;
 using Cell = Navigation::Mapping::Map::Cell;
 
 namespace Navigation::PathGenerators {
+
+template <typename P>
 class PlannerTester {
  public:
   PlannerTester(rclcpp::Node& n, const std::shared_ptr<Mapping::MapManager>& m)
@@ -30,23 +31,29 @@ class PlannerTester {
     map->GetMapRef().UpdateMap(cells);
   }
 
-  void DrawTree(cv::Mat& m, const cv::Vec3b& color = cv::Vec3b{0, 0, 0}) {
-    // for (const auto& n : nav.prevNodes) {
-    //   const auto xy1 = map->GetMap().GetCellCoords(n.first.getPoint());
-    //   const auto xy2 = map->GetMap().GetCellCoords(n.second.getPoint());
-    //   cv::line(m, cv::Point(xy1.x, xy1.y), cv::Point(xy2.x, xy2.y), color);
-    // }
-    for (const auto& n : nav.nodes) {
-      for (const auto& i : n.children) {
-        const auto xy1 = map->GetMap().GetCellCoords(n.point);
-        const auto xy2 = map->GetMap().GetCellCoords(nav.nodes.at(i).point);
-        cv::line(m, cv::Point(xy1.x, xy1.y), cv::Point(xy2.x, xy2.y), color);
-      }
-    }
-  };
+  //   void DrawTree(cv::Mat& m, const cv::Vec3b& color = cv::Vec3b{0, 0, 0}) {
+  // #ifdef USE_ASTAR
+  //     for (const auto& n : nav.prevNodes) {
+  //       const auto xy1 = map->GetMap().GetCellCoords(n.first.getPoint());
+  //       const auto xy2 = map->GetMap().GetCellCoords(n.second.getPoint());
+  //       cv::line(m, cv::Point(xy1.x, xy1.y), cv::Point(xy2.x, xy2.y), color);
+  //     }
+  // #else
+  //     for (const auto& n : nav.nodes) {
+  //       const auto xy1 = map->GetMap().GetCellCoords(n.point);
+  //       cv::circle(m, cv::Point(xy1.x, xy1.y), 3, color, cv::FILLED);
+  //       if (n.parent < nav.nodes.size()) {
+  //         const auto xy2 =
+  //             map->GetMap().GetCellCoords(nav.nodes.at(n.parent).point);
+  //         cv::line(m, cv::Point(xy1.x, xy1.y), cv::Point(xy2.x, xy2.y),
+  //         color, 2);
+  //       }
+  //     }
+  // #endif
+  //   };
 
  private:
-  RRTNavigator nav;
+  P nav;
   std::shared_ptr<Mapping::MapManager> map;
 };
 }  // namespace Navigation::PathGenerators
@@ -161,30 +168,32 @@ int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   const auto params = parseParams(rclcpp::remove_ros_arguments(argc, argv));
   rclcpp::Node n("planner_tester");
-  n.declare_parameter("planning_resolution", 0.05);
+  n.declare_parameter("planning_resolution", 1.);
   auto map = std::make_shared<Navigation::Mapping::MapManager>(n);
-  Navigation::PathGenerators::PlannerTester tester(n, map);
-  const auto t1 = std::chrono::system_clock::now();
-  const auto path1 = tester.PlanPath({0, 0, 0}, {100, 100});
-  const std::chrono::duration<double> d1 =
-      std::chrono::system_clock::now() - t1;
-  std::cout << "Planned P1 in: " << std::fixed << d1.count() << "s. Was "
-            << path1.size() << " points long" << std::endl;
-
+  Navigation::PathGenerators::PlannerTester<
+      Navigation::PathGenerators::RRTNavigator>
+      rrtTester(n, map);
+  Navigation::PathGenerators::PlannerTester<
+      Navigation::PathGenerators::AStarNavigator>
+      aTester(n, map);
   addRandomObstacles(map, params.seed);
 
-  const auto t2 = std::chrono::system_clock::now();
-  const auto path2 = tester.PlanPath({0, 0, 0}, {100, 100});
-  const std::chrono::duration<double> d2 =
-      std::chrono::system_clock::now() - t2;
-  std::cout << "Planned P2 in: " << std::fixed << d2.count() << "s. Was "
-            << path2.size() << " points long " << std::endl;
+  const auto rrtT = std::chrono::system_clock::now();
+  const auto rrtPath = rrtTester.PlanPath({0, 0, 0}, {100, 100});
+  const std::chrono::duration<double> rrtD =
+      std::chrono::system_clock::now() - rrtT;
+
+  const auto aT = std::chrono::system_clock::now();
+  const auto aPath = aTester.PlanPath({0, 0, 0}, {100, 100});
+  const std::chrono::duration<double> aD =
+      std::chrono::system_clock::now() - aT;
+
+  std::cout << "AStar: " << aD.count() << " RRT: " << rrtD.count() << std::endl;
 
   auto m = getImage(map);
-  drawPath(m, path1, map);
-  drawPath(m, path2, map, {255, 0, 0});
-  // tester.DrawTree(m, {0, 255, 0});
-  drawPt(m, {100, 100}, map, {0, 255, 0});
+  drawPath(m, rrtPath, map, {0, 255, 0});
+  drawPath(m, aPath, map, {255, 0, 0});
+  drawPt(m, {100, 100}, map, {0, 255, 255});
   cv::imshow("MAP", m);
   while (cv::waitKey(0) != 'q') {
     ;

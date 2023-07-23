@@ -29,9 +29,10 @@ std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
   queue = std::priority_queue<Node, std::vector<Node>, std::greater<>>();
   this->prevNodes.clear();
   visitedNodes.clear();
-  Node startNode{{pose.x, pose.y},
-                 0.0,
-                 destination.GetDataRef().distanceFromPoint({pose.x, pose.y})};
+  startNode =
+      Node{{pose.x, pose.y},
+           0.0,
+           destination.GetDataRef().distanceFromPoint({pose.x, pose.y})};
   queue.push(startNode);
 
   while (!queue.empty() && !this->isDestinationNode(queue.top()) &&
@@ -44,11 +45,22 @@ std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
     }
   }
 
+  visitedNodes.clear();
+  std::cout << "Done exploring: " << std::endl;
+
   std::vector<owen_common::types::Point2D> ret;
 
   Node n = queue.top();
-  while (n != startNode) {
+  Node prv;
+  while (n != startNode && rclcpp::ok()) {
+    if (visitedNodes.count(n) > 0) {
+      std::cout << "GOT circle in prev " << n.getPoint()
+                << " P: " << prv.getPoint() << std::endl;
+      break;
+    }
+    visitedNodes.insert(n);
     ret.push_back(n.getPoint());
+    prv = n;
     n = this->prevNodes[n];
   }
   ret.push_back(startNode.getPoint());
@@ -73,12 +85,36 @@ void AStarNavigator::exploreAroundNode(const Node& n) {
   addNodeWithOffset(n, {-params.planningResolution, 0.0});
   addNodeWithOffset(n, {0.0, params.planningResolution});
   addNodeWithOffset(n, {0.0, -params.planningResolution});
+
+  addNodeWithOffset(n, {params.planningResolution, params.planningResolution});
+  addNodeWithOffset(n, {-params.planningResolution, params.planningResolution});
+  addNodeWithOffset(n, {params.planningResolution, -params.planningResolution});
+  addNodeWithOffset(n,
+                    {-params.planningResolution, -params.planningResolution});
+
+  addNodeWithOffset(n,
+                    {2 * params.planningResolution, params.planningResolution});
+  addNodeWithOffset(
+      n, {2 * params.planningResolution, -params.planningResolution});
+  addNodeWithOffset(
+      n, {-2 * params.planningResolution, params.planningResolution});
+  addNodeWithOffset(
+      n, {-2 * params.planningResolution, -params.planningResolution});
+  addNodeWithOffset(n,
+                    {params.planningResolution, 2 * params.planningResolution});
+  addNodeWithOffset(
+      n, {-params.planningResolution, 2 * params.planningResolution});
+  addNodeWithOffset(
+      n, {params.planningResolution, -2 * params.planningResolution});
+  addNodeWithOffset(
+      n, {-params.planningResolution, -2 * params.planningResolution});
 }
 
 void AStarNavigator::addNodeWithOffset(
     const Node& n, const owen_common::types::Point2D& offset) {
   Node newNode{n.getPoint() + offset};
-  if (!map->GetMap().IsSafe(newNode.getPoint(), params.vehicleRadius)) {
+  if (!map->GetMap().IsSafePath(n.getPoint(), newNode.getPoint(),
+                                params.vehicleRadius)) {
     return;
   }
   newNode.setHeurisitc(
@@ -86,12 +122,14 @@ void AStarNavigator::addNodeWithOffset(
   newNode.setCost(newNode.getPoint().distanceFromPoint(n.getPoint()) +
                   n.getCost());
   if (prevNodes.count(newNode) > 0) {
-    if (prevNodes[newNode].getTotalCost() > newNode.getTotalCost()) {
+    if (prevNodes[newNode].getCost() > newNode.getCost()) {
       prevNodes[newNode] = n;
+      prevNodes[newNode].setCost(newNode.getCost());
       queue.push(newNode);
     }
   } else {
     prevNodes[newNode] = n;
+    prevNodes[newNode].setCost(newNode.getCost());
     queue.push(newNode);
   }
 }

@@ -9,6 +9,7 @@ namespace Navigation::Mapping {
 namespace Constants {
 constexpr double DefaultSize = 10.0;
 constexpr double DefaultResolution = 0.1;
+constexpr Map::Point2D ExtraResize{DefaultSize, DefaultSize};
 }  // namespace Constants
 
 Map::Map()
@@ -29,10 +30,12 @@ void Map::ResizeToPoint(const Point2D& pt) {
   }
   Point2D maxPt = origin + Point2D{resolution * width, resolution * height};
   Point2D newMax{std::max(pt.x, maxPt.x), std::max(pt.y, maxPt.y)};
+  newMax = newMax + Constants::ExtraResize;
 
   Point2D newOrigin;
   newOrigin.x = std::min(origin.x, pt.x);
   newOrigin.y = std::min(origin.y, pt.y);
+  newOrigin = newOrigin - Constants::ExtraResize;
 
   int newWidth = (newMax.x - newOrigin.x) / resolution;
   int newHeight = (newMax.y - newOrigin.y) / resolution;
@@ -196,7 +199,8 @@ bool Map::IsSafePath(const Point2D& pt, const Point2D& pt2,
   const auto step = (pt - pt2) / count;
 
   for (int i = 0; i < count; ++i) {
-    if (!IsSafe(pt + (step * i), vehicleRadius)) {
+    const auto c = pt2 + (step * i);
+    if (!IsSafe(c, vehicleRadius)) {
       return false;
     }
   }

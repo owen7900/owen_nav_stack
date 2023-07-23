@@ -21,7 +21,7 @@ class BaseNavigator : public BasePathGenerator {
     debugPathPub = node.create_publisher<nav_msgs::msg::Path>("/path", 1);
 
     params.planningResolution =
-        node.get_parameter_or("planning_resolution", 0.1);
+        node.get_parameter_or("planning_resolution", 1.0);
     params.vehicleRadius = node.get_parameter_or("vehicle_radius", 0.15);
   }
   bool HasNewCommand() override {

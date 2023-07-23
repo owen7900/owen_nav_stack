@@ -17,11 +17,11 @@ struct Node {
   double getTotalCost() const { return totalCost; };
   void setCost(double c) {
     cost = c;
-    totalCost = cost + heuristic * 2;
+    totalCost = cost + heuristic;
   }
   void setHeurisitc(double h) {
     heuristic = h;
-    totalCost = cost + heuristic * 2;
+    totalCost = cost + heuristic;
   }
   void setPoint(const owen_common::types::Point2D& p) { point = p; }
 
@@ -39,6 +39,7 @@ struct NodeHash {
 };
 
 class AStarNavigator : public BaseNavigator {
+  template <typename P>
   friend class PlannerTester;
 
  public:
@@ -61,6 +62,7 @@ class AStarNavigator : public BaseNavigator {
   std::unordered_set<Node, NodeHash> visitedNodes;
 
   std::priority_queue<Node, std::vector<Node>, std::greater<>> queue;
+  Node startNode;
 };
 
 }  // namespace Navigation::PathGenerators
