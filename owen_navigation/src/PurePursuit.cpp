@@ -27,7 +27,7 @@ constexpr double DefaultMinObstacleDistance = 0.25;
 constexpr double DefaultObstacleTurnLimit = 0.5;
 constexpr double DefaultForwardGain = 0.5;
 constexpr double DefaultAngularLinearWeight = 0.2;
-constexpr double DefaultMaxForwardVel = 1.0;
+constexpr double DefaultMaxForwardVel = 0.2;
 
 }  // namespace Constants
 
