@@ -1,6 +1,7 @@
 #include "owen_navigation/path_generators/PathGeneratorFactory.hpp"
 
 #include "owen_navigation/path_generators/AStarNavigator.hpp"
+#include "owen_navigation/path_generators/RRTNavigator.hpp"
 
 namespace Navigation {
 
@@ -10,6 +11,9 @@ std::shared_ptr<PathGenerators::BasePathGenerator> GetPathGenerator(
   if (name == "AStar") {
     return std::make_shared<Navigation::PathGenerators::AStarNavigator>(node,
                                                                         map);
+  } else if (name == "rrt") {
+    return std::make_shared<Navigation::PathGenerators::RRTNavigator>(node,
+                                                                      map);
   }
 
   return nullptr;

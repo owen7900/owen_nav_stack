@@ -2,6 +2,8 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <rclcpp/logger.hpp>
+
 #include "owen_navigation/mapping/obstacle_sources/ObstacleSourceFactory.hpp"
 
 namespace Navigation::Mapping {
@@ -24,6 +26,8 @@ MapManager::MapManager(rclcpp::Node& node) {
   for (const auto& s : obstacleSourcesStrings) {
     auto source = ObstacleSourceFactory::GetObstacleSource(s, node);
     if (source) {
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("map_manager"),
+                         "Loaded obstacle source: " << s);
       this->obstacleSources.push_back(std::move(source));
     }
   }
@@ -35,13 +39,13 @@ MapManager::MapManager(rclcpp::Node& node) {
 }
 
 void MapManager::UpdateMap(const owen_common::types::Pose2D& pose) {
-  Map::MapUpdate update;
   for (const auto& source : this->obstacleSources) {
-    const auto mapUpdates = source->GetMapUpdate(pose);
-    update.insert(update.end(), mapUpdates.begin(), mapUpdates.end());
+    if (source->HasMapUpdate()) {
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("map_manager"),
+                         "Got update from :" << source->GetName());
+      this->map.UpdateMap(source->GetMapUpdate(pose));
+    }
   }
-
-  this->map.UpdateMap(update);
 }
 
 nav_msgs::msg::OccupancyGrid MapManager::generateNavMap() const {
@@ -62,7 +66,9 @@ nav_msgs::msg::OccupancyGrid MapManager::generateNavMap() const {
   g.info.origin.orientation.z = q.z();
   g.info.origin.orientation.w = q.w();
 
-  g.data.assign(map.GetData().begin(), map.GetData().end());
+  g.data.resize(map.GetData().size());
+  std::transform(map.GetData().begin(), map.GetData().end(), g.data.begin(),
+                 [](const bool& m) { return m ? 100 : 0; });
 
   return g;
 }

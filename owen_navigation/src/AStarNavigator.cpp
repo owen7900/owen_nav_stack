@@ -1,5 +1,8 @@
 #include "owen_navigation/path_generators/AStarNavigator.hpp"
 
+#include <rclcpp/logger.hpp>
+#include <rclcpp/utilities.hpp>
+
 namespace Navigation::PathGenerators {
 
 namespace Constants {
@@ -7,82 +10,59 @@ const std::string Name = "AStar";
 }  // namespace Constants
 
 bool operator>(const Node& lhs, const Node& rhs) {
-  return (lhs.cost + lhs.heuristic) > (rhs.cost + rhs.heuristic);
+  return (lhs.getTotalCost()) > (rhs.getTotalCost());
 }
 
 bool operator!=(const Node& lhs, const Node& rhs) {
-  return lhs.point != rhs.point;
+  return lhs.getPoint() != rhs.getPoint();
 }
 
 bool operator==(const Node& lhs, const Node& rhs) {
-  return lhs.point == rhs.point;
+  return lhs.getPoint() == rhs.getPoint();
 }
 AStarNavigator::AStarNavigator(rclcpp::Node& node,
                                const std::shared_ptr<Mapping::MapManager>& map)
-    : BasePathGenerator(node, Constants::Name, map) {
-  destinationSub = node.create_subscription<geometry_msgs::msg::PoseStamped>(
-      "/goal_pose", 1, [this](const geometry_msgs::msg::PoseStamped& msg) {
-        destination.SetData({msg.pose.position.x, msg.pose.position.y});
-      });
-  debugPathPub = node.create_publisher<nav_msgs::msg::Path>("/astar/path", 1);
-
-  params.planningResolution =
-      node.get_parameter_or("astar_planning_resolution", 0.1);
-}
+    : BaseNavigator(node, Constants::Name, map) {}
 
 std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
     const owen_common::types::Pose2D& pose) {
   queue = std::priority_queue<Node, std::vector<Node>, std::greater<>>();
-  Node startNode = {
-      {pose.x, pose.y},
-      0.0,
-      destination.GetDataRef().distanceFromPoint({pose.x, pose.y})};
+  this->prevNodes.clear();
+  visitedNodes.clear();
+  Node startNode{{pose.x, pose.y},
+                 0.0,
+                 destination.GetDataRef().distanceFromPoint({pose.x, pose.y})};
   queue.push(startNode);
 
-  while (!queue.empty() && !this->isDestinationNode(queue.top())) {
+  while (!queue.empty() && !this->isDestinationNode(queue.top()) &&
+         rclcpp::ok()) {
     const auto top = queue.top();
     queue.pop();
-    this->exploreAroundNode(top);
+    if (visitedNodes.count(top) <= 0) {
+      visitedNodes.insert(top);
+      this->exploreAroundNode(top);
+    }
   }
 
   std::vector<owen_common::types::Point2D> ret;
 
   Node n = queue.top();
   while (n != startNode) {
-    ret.push_back(n.point);
+    ret.push_back(n.getPoint());
     n = this->prevNodes[n];
   }
-  ret.push_back(startNode.point);
+  ret.push_back(startNode.getPoint());
   std::reverse(ret.begin(), ret.end());
   this->publishDebugPath(ret);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger(Constants::Name),
+                     "Explored: " << this->prevNodes.size() << " nodes");
   return ret;
 }
 
-void AStarNavigator::publishDebugPath(
-    const std::vector<owen_common::types::Point2D>& path) const {
-  nav_msgs::msg::Path p;
-  p.header.frame_id = "map";
-  p.poses.resize(path.size());
-  std::transform(path.begin(), path.end(), p.poses.begin(), [](const auto& pt) {
-    geometry_msgs::msg::PoseStamped r;
-    r.header.frame_id = "map";
-    r.pose.position.x = pt.x;
-    r.pose.position.y = pt.y;
-    return r;
-  });
-  this->debugPathPub->publish(p);
-}
-
-bool AStarNavigator::HasNewCommand() {
-  const bool tmp = destination.HasNewData();
-  destination.ResetFlag();
-  return tmp;
-}
-
 bool AStarNavigator::isDestinationNode(const Node& n) {
-  return std::abs(n.point.x - destination.GetDataRef().x) <=
+  return std::abs(n.getPoint().x - destination.GetDataRef().x) <=
              params.planningResolution &&
-         std::abs(n.point.y - destination.GetDataRef().y) <=
+         std::abs(n.getPoint().y - destination.GetDataRef().y) <=
              params.planningResolution;
 }
 
@@ -97,21 +77,22 @@ void AStarNavigator::exploreAroundNode(const Node& n) {
 
 void AStarNavigator::addNodeWithOffset(
     const Node& n, const owen_common::types::Point2D& offset) {
-  Node newNode = n;
-  newNode.point = newNode.point + offset;
-  if (map->GetMap().IsOccupied(newNode.point)) {
+  Node newNode{n.getPoint() + offset};
+  if (!map->GetMap().IsSafe(newNode.getPoint(), params.vehicleRadius)) {
     return;
   }
-  newNode.heuristic = newNode.point.distanceFromPoint(destination.GetDataRef());
-  queue.push(newNode);
-  newNode.cost += newNode.point.distanceFromPoint(n.point);
+  newNode.setHeurisitc(
+      newNode.getPoint().distanceFromPoint(destination.GetDataRef()));
+  newNode.setCost(newNode.getPoint().distanceFromPoint(n.getPoint()) +
+                  n.getCost());
   if (prevNodes.count(newNode) > 0) {
-    if (prevNodes[newNode].cost + prevNodes[newNode].heuristic >
-        newNode.cost + newNode.heuristic) {
+    if (prevNodes[newNode].getTotalCost() > newNode.getTotalCost()) {
       prevNodes[newNode] = n;
+      queue.push(newNode);
     }
   } else {
     prevNodes[newNode] = n;
+    queue.push(newNode);
   }
 }
 

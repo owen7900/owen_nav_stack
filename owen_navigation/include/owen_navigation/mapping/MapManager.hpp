@@ -12,6 +12,7 @@ class MapManager {
   explicit MapManager(rclcpp::Node& node);
 
   const Map& GetMap() const { return map; }
+  Map& GetMapRef() { return map; }
 
   void UpdateMap(const owen_common::types::Pose2D& pose);
 

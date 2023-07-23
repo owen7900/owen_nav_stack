@@ -121,12 +121,12 @@ void NavigatorNode::controlLoop() {
 
   if (!this->activeGenerator) {
     RCLCPP_INFO_STREAM(this->get_logger(), "No active path generator");
-    this->commandPub->publish({});
+    this->commandPub->publish(geometry_msgs::msg::Twist{});
   } else if (this->pose.GetDataAge() > dataTimeout) {
     RCLCPP_WARN_STREAM(this->get_logger(), "Have outdated pose, is "
                                                << this->pose.GetDataAge()
                                                << "s old. Stopping vehicle");
-    this->commandPub->publish({});
+    this->commandPub->publish(geometry_msgs::msg::Twist{});
   } else {
     auto command = this->pathFollower->CalculateCommand(pose.GetDataRef());
     if (command.has_value()) {
@@ -146,7 +146,7 @@ void NavigatorNode::controlLoop() {
 void NavigatorNode::executeRecovery() {
   RCLCPP_INFO(this->get_logger(), "Executing recovery");
   if (recoveryBehaviours.empty()) {
-    this->commandPub->publish({});
+    this->commandPub->publish(geometry_msgs::msg::Twist{});
   }
 
   const double now = this->get_clock()->now().seconds();

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <functional>
+#include <ostream>
 namespace owen_common::types {
 
 template <typename T>
@@ -20,8 +21,23 @@ struct BasePoint2D {
 
   BasePoint2D operator-() { return {-x, -y}; }
 
-  friend BasePoint2D operator-(const BasePoint2D& rhs, const BasePoint2D& lhs) {
-    return rhs + -lhs;
+  friend BasePoint2D operator-(const BasePoint2D& lhs, const BasePoint2D& rhs) {
+    return {lhs.x - rhs.x, lhs.y - rhs.y};
+  }
+
+  template <typename U>
+  friend BasePoint2D operator/(const BasePoint2D& lhs, const U& rhs) {
+    return {lhs.x / rhs, lhs.y / rhs};
+  }
+
+  template <typename U>
+  friend BasePoint2D operator*(const BasePoint2D& lhs, const U& rhs) {
+    return {lhs.x * rhs, lhs.y * rhs};
+  }
+
+  template <typename U>
+  friend BasePoint2D operator*(const U& lhs, const BasePoint2D& rhs) {
+    return {lhs * rhs.x, lhs * rhs.y};
   }
 
   double distanceFromPoint(const BasePoint2D& other) const {
@@ -45,6 +61,13 @@ struct BasePointHash {
     return std::hash<T>{}(pt.x) ^ std::hash<T>{}(pt.y);
   }
 };
+
+template <typename T>
+std::ostream& operator<<(std::ostream& stream,
+                         const owen_common::types::BasePoint2D<T>& pt) {
+  stream << "{" << pt.x << ", " << pt.y << "}";
+  return stream;
+}
 
 using Point2D = BasePoint2D<double>;
 

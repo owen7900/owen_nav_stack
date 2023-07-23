@@ -11,13 +11,17 @@ class StaticMapObstacleSource : public BaseObstacleSource {
   explicit StaticMapObstacleSource(rclcpp::Node& n);
 
   Map::MapUpdate GetMapUpdate(
-      const owen_common::types::Pose2D& /*pose*/) const override;
+      const owen_common::types::Pose2D& /*pose*/) override;
+
+  bool HasMapUpdate() const override;
 
  private:
-  owen_common::TimeoutData<nav_msgs::msg::OccupancyGrid> map;
+  owen_common::TimeoutData<nav_msgs::msg::OccupancyGrid::SharedPtr> map;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSub;
+  bool gotNewMap;
 
   double mapTimeout;
+  bool canClear;
 };
 
 }  // namespace Navigation::Mapping::ObstacleSources
