@@ -7,11 +7,12 @@
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/utilities.hpp>
 
+#include "owen_navigation/mapping/obstacle_sources/ObstacleSourceFactory.hpp"
 #include "owen_navigation/path_generators/AStarNavigator.hpp"
 #include "owen_navigation/path_generators/RRTNavigator.hpp"
 using Point2D = owen_common::types::Point2D;
 using Pose2D = owen_common::types::Pose2D;
-using Cell = Navigation::Mapping::Map::Cell;
+using Cell = Navigation::Mapping::MapManager::MapT::Cell;
 
 namespace Navigation::PathGenerators {
 
@@ -86,7 +87,8 @@ cv::Mat getImage(const std::shared_ptr<Navigation::Mapping::MapManager>& mngr) {
   for (size_t i = 0; i < map.GetWidth(); ++i) {
     for (size_t j = 0; j < map.GetHeight(); ++j) {
       m.at<cv::Vec3b>(j, i) =
-          map.IsOccupied(Navigation::Mapping::Map::IntPoint{i, j})
+          map.IsOccupied(Navigation::Mapping::MapManager::MapT::IntPoint{
+              static_cast<int>(i), static_cast<int>(j)})
               ? cv::Vec3b(0, 0, 255)
               : cv::Vec3b(255, 255, 255);
     }
@@ -97,6 +99,9 @@ cv::Mat getImage(const std::shared_ptr<Navigation::Mapping::MapManager>& mngr) {
 void drawPath(cv::Mat& mat, const std::vector<Point2D>& path,
               const std::shared_ptr<Navigation::Mapping::MapManager>& mngr,
               const cv::Vec3b& color = cv::Vec3b{0, 0, 0}) {
+  if (path.empty()) {
+    return;
+  }
   const auto& map = mngr->GetMap();
   auto prevPt = path.front();
   const size_t numPts = path.size();
@@ -117,19 +122,14 @@ void drawPt(cv::Mat& mat, const Point2D& point,
 }
 
 void addRandomObstacles(
-    const std::shared_ptr<Navigation::Mapping::MapManager>& map, size_t seed) {
-  if (seed == 0) {
-    seed = std::chrono::system_clock::now().time_since_epoch().count();
-  }
-  std::cout << "Using seed: " << seed << std::endl;
-  srand(seed);
+    const std::shared_ptr<Navigation::Mapping::MapManager>& map) {
   auto& mapRef = map->GetMapRef();
   mapRef.ResizeToPoint({100, 100});
-  std::vector<Navigation::Mapping::Map::Cell> updates;
+  std::vector<Navigation::Mapping::MapManager::MapT::Cell> updates;
 
   size_t numObs = rand() % 40;
   for (size_t i = 0; i < numObs; ++i) {
-    Navigation::Mapping::Map::Cell c;
+    Navigation::Mapping::MapManager::MapT::Cell c;
     c.state = true;
     owen_common::types::Point2D minPt{
         rand() % mapRef.GetWidth() * mapRef.GetResolution(),
@@ -168,15 +168,22 @@ int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   const auto params = parseParams(rclcpp::remove_ros_arguments(argc, argv));
   rclcpp::Node n("planner_tester");
-  n.declare_parameter("planning_resolution", 1.);
+  n.declare_parameter("planning_resolution", 1.0);
+  n.declare_parameter("max_planning_time", 1.0);
   auto map = std::make_shared<Navigation::Mapping::MapManager>(n);
   Navigation::PathGenerators::PlannerTester<
       Navigation::PathGenerators::RRTNavigator>
       rrtTester(n, map);
+  size_t seed = params.seed;
+  if (seed == 0) {
+    seed = std::chrono::system_clock::now().time_since_epoch().count();
+  }
+  std::cout << "Using seed: " << seed << std::endl;
+  srand(seed);
   Navigation::PathGenerators::PlannerTester<
       Navigation::PathGenerators::AStarNavigator>
       aTester(n, map);
-  addRandomObstacles(map, params.seed);
+  addRandomObstacles(map);
 
   const auto rrtT = std::chrono::system_clock::now();
   const auto rrtPath = rrtTester.PlanPath({0, 0, 0}, {100, 100});
@@ -189,6 +196,7 @@ int main(int argc, char* argv[]) {
       std::chrono::system_clock::now() - aT;
 
   std::cout << "AStar: " << aD.count() << " RRT: " << rrtD.count() << std::endl;
+  printPath(aPath);
 
   auto m = getImage(map);
   drawPath(m, rrtPath, map, {0, 255, 0});

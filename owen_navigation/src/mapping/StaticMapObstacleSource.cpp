@@ -3,8 +3,6 @@
 #include <rclcpp/logger.hpp>
 
 namespace Navigation::Mapping::ObstacleSources {
-using std::move;
-using std::placeholders::_1;
 
 namespace Constants {
 constexpr double DefaultMapTimeout = 10.0;
@@ -24,7 +22,7 @@ StaticMapObstacleSource::StaticMapObstacleSource(rclcpp::Node& n)
   canClear = n.get_parameter_or("static_map_clearing", false);
 }
 
-Map::MapUpdate StaticMapObstacleSource::GetMapUpdate(
+MapManager::MapT::MapUpdate StaticMapObstacleSource::GetMapUpdate(
     const owen_common::types::Pose2D& /*pose*/) {
   gotNewMap = false;
   if (map.GetDataAge() > mapTimeout) {
@@ -33,14 +31,14 @@ Map::MapUpdate StaticMapObstacleSource::GetMapUpdate(
   }
   using Point = owen_common::types::Point2D;
 
-  Map::MapUpdate update;
+  MapManager::MapT::MapUpdate update;
   const auto mapPtr = map.GetData();
   Point origin{mapPtr->info.origin.position.x, mapPtr->info.origin.position.y};
 
   size_t idx = 0;
   for (size_t y = 0; y < mapPtr->info.height; ++y) {
     for (size_t x = 0; x < mapPtr->info.width; ++x) {
-      Map::Cell cell;
+      MapManager::MapT::Cell cell;
       cell.state = mapPtr->data[idx] > 0;
       cell.bounds = {origin + Point{x * mapPtr->info.resolution,
                                     y * mapPtr->info.resolution},

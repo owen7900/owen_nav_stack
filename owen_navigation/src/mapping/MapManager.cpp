@@ -21,7 +21,7 @@ MapManager::MapManager(rclcpp::Node& node) {
       node.get_parameter_or("map_size", Constants::DefaultMapSize);
   const double mapResolution =
       node.get_parameter_or("map_resolution", Constants::DefaultResolution);
-  map = Map({-mapSize, -mapSize}, {mapSize, mapSize}, mapResolution);
+  map = MapT({-mapSize, -mapSize}, {mapSize, mapSize}, mapResolution);
 
   for (const auto& s : obstacleSourcesStrings) {
     auto source = ObstacleSourceFactory::GetObstacleSource(s, node);

@@ -23,6 +23,8 @@ class BaseNavigator : public BasePathGenerator {
     params.planningResolution =
         node.get_parameter_or("planning_resolution", 1.0);
     params.vehicleRadius = node.get_parameter_or("vehicle_radius", 0.15);
+    params.maxPlanningTime = std::chrono::duration<double>(
+        node.get_parameter_or("max_planning_time", 0.5));
   }
   bool HasNewCommand() override {
     const bool tmp = destination.HasNewData();
@@ -53,6 +55,7 @@ class BaseNavigator : public BasePathGenerator {
   struct Parameters {
     float planningResolution;
     float vehicleRadius;
+    std::chrono::duration<double> maxPlanningTime;
   };
 
   Parameters params;

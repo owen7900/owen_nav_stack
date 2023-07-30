@@ -35,12 +35,24 @@ std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
            destination.GetDataRef().distanceFromPoint({pose.x, pose.y})};
   queue.push(startNode);
 
+  const auto startTime = std::chrono::system_clock::now();
+  Node closest;
+  double minDist = std::numeric_limits<double>::max();
+
   while (!queue.empty() && !this->isDestinationNode(queue.top()) &&
-         rclcpp::ok()) {
+         rclcpp::ok() &&
+         ((std::chrono::system_clock::now() - startTime) <
+          params.maxPlanningTime)) {
     const auto top = queue.top();
     queue.pop();
     if (visitedNodes.count(top) <= 0) {
       visitedNodes.insert(top);
+      const double dist =
+          top.getPoint().distanceFromPoint(destination.PeekDataRef());
+      if (dist < minDist) {
+        closest = top;
+        minDist = dist;
+      }
       this->exploreAroundNode(top);
     }
   }
@@ -51,6 +63,9 @@ std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
   std::vector<owen_common::types::Point2D> ret;
 
   Node n = queue.top();
+  if (!isDestinationNode(n)) {
+    n = closest;
+  }
   Node prv;
   while (n != startNode && rclcpp::ok()) {
     if (visitedNodes.count(n) > 0) {

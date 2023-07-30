@@ -17,6 +17,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package( cv_bridge REQUIRED)
+find_package( sensor_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 
 set(dependencies
@@ -29,16 +30,17 @@ set(dependencies
   tf2_ros
   tf2_msgs
   tf2_geometry_msgs
+  sensor_msgs
   )
 
 set(cpp_files
   src/NavigatorNode.cpp
   src/AStarNavigator.cpp 
   src/PathGeneratorFactory.cpp 
-  src/mapping/Map.cpp
   src/mapping/MapManager.cpp
   src/mapping/ObstacleSourceFactory.cpp
   src/mapping/StaticMapObstacleSource.cpp
+  src/mapping/LidarObstacleSource.cpp
   src/PathFollowerFactory.cpp
   src/PurePursuit.cpp
   src/RecoveryBehaviourFactory.cpp
@@ -46,15 +48,25 @@ set(cpp_files
   src/RRTNavigator.cpp
   )
 
+add_library(${PROJECT_NAME} ${cpp_files})
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  ${PROJECT_NAME}
+  ${dependencies}
+)
+
 add_executable(owen_navigation_node 
   src/owen_navigation_node.cpp 
-  ${cpp_files}
   )
 
 target_include_directories(owen_navigation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 target_compile_features(owen_navigation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries(owen_navigation_node ${PROJECT_NAME})
 
 
 ament_target_dependencies(
@@ -74,6 +86,7 @@ target_include_directories(planner_tester PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 target_compile_features(planner_tester PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries(planner_tester ${PROJECT_NAME})
 
 
 ament_target_dependencies(

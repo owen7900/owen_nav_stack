@@ -7,15 +7,14 @@ class RRTNavigator : public BaseNavigator {
   friend class PlannerTester;
   using Point2D = owen_common::types::Point2D;
   struct Parameters {
-    double successRadius;
-    double exploreDistance;
-    double exploreFraction;
+    bool doOptimize;
   };
 
  public:
   struct Node {
     Point2D point;
     size_t parent;
+    double cost;
     std::vector<size_t> children;
   };
 
@@ -29,7 +28,8 @@ class RRTNavigator : public BaseNavigator {
   bool HasUpdatedPath() const override;
 
  private:
-  void addNode(const owen_common::types::Point2D& pt, size_t parent);
+  void addNode(const owen_common::types::Point2D& pt, size_t parent,
+               double cost);
 
   bool isPointDestination(const Point2D& pt) const;
 

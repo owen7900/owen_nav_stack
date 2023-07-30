@@ -7,6 +7,7 @@
 #include <rclcpp/logger.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
+#include "owen_navigation/mapping/obstacle_sources/ObstacleSourceFactory.hpp"
 #include "owen_navigation/path_followers/PathFollowerFactory.hpp"
 #include "owen_navigation/path_generators/PathGeneratorFactory.hpp"
 #include "owen_navigation/recovery_behaviours/RecoveryBehaviourFactory.hpp"

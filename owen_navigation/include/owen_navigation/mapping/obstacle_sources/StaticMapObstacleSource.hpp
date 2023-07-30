@@ -10,7 +10,7 @@ class StaticMapObstacleSource : public BaseObstacleSource {
  public:
   explicit StaticMapObstacleSource(rclcpp::Node& n);
 
-  Map::MapUpdate GetMapUpdate(
+  MapManager::MapT::MapUpdate GetMapUpdate(
       const owen_common::types::Pose2D& /*pose*/) override;
 
   bool HasMapUpdate() const override;
