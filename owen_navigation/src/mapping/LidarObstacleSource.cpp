@@ -42,7 +42,7 @@ MapManager::MapT::MapUpdate LidarObstacleSource::GetMapUpdate(
       const double maxClearingRange = range - clearingRadius;
       for (double r = 0; r < maxClearingRange; r += raytraceResolution) {
         MapManager::MapT::Cell c;
-        c.state = false;
+        c.state = MapManager::MapT::Free;
         const auto center = centerPt + Point2D{r * sinA, r * cosA};
         c.bounds = {{center + clearing}, {center - clearing}};
         ret.push_back(c);
@@ -50,7 +50,7 @@ MapManager::MapT::MapUpdate LidarObstacleSource::GetMapUpdate(
     }
 
     MapManager::MapT::Cell c;
-    c.state = true;
+    c.state = MapManager::MapT::Occupied;
     c.bounds = MapManager::MapT::Rectangle{pt, pt};
     ret.push_back(c);
   }

@@ -39,12 +39,14 @@ MapManager::MapT::MapUpdate StaticMapObstacleSource::GetMapUpdate(
   for (size_t y = 0; y < mapPtr->info.height; ++y) {
     for (size_t x = 0; x < mapPtr->info.width; ++x) {
       MapManager::MapT::Cell cell;
-      cell.state = mapPtr->data[idx] > 0;
+      cell.state = (mapPtr->data[idx] > 0) ? MapManager::MapT::Occupied
+                                           : MapManager::MapT::Free;
       cell.bounds = {origin + Point{x * mapPtr->info.resolution,
                                     y * mapPtr->info.resolution},
                      origin + Point{(x + 1) * mapPtr->info.resolution,
                                     (y + 1) * mapPtr->info.resolution}};
-      if (mapPtr->data[idx++] >= 0 && (cell.state || canClear)) {
+      if (mapPtr->data[idx++] >= 0 &&
+          ((cell.state != MapManager::MapT::Free) || canClear)) {
         update.push_back(cell);
       }
     }
