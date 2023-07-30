@@ -20,6 +20,12 @@ class Rectangle {
   BasePoint2D<T> GetMaxPt() const { return maxPt; };
   BasePoint2D<T> GetMinPt() const { return minPt; };
 
+  template <typename U>
+  inline bool Contains(const BasePoint2D<U>& pt) {
+    return pt.x >= minPt.x && pt.y >= minPt.y && pt.x <= maxPt.x &&
+           pt.y <= maxPt.y;
+  }
+
   friend std::ostream& operator<<(std::ostream& stream, const Rectangle& r) {
     stream << "{" << r.minPt << ", " << r.maxPt << "}";
     return stream;

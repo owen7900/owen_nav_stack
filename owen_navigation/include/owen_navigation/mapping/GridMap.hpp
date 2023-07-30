@@ -7,7 +7,7 @@
 namespace Navigation::Mapping {
 
 template <typename T>
-class Map {
+class GridMap {
  public:
   using Point2D = owen_common::types::Point2D;
   using IntPoint = owen_common::types::BasePoint2D<int>;
@@ -26,8 +26,8 @@ class Map {
   constexpr static const Point2D ExtraResize = {DefaultSize, DefaultSize};
 
  public:
-  Map() = default;
-  Map(const Point2D& minPt, const Point2D& maxPt, double resolution)
+  GridMap() = default;
+  GridMap(const Point2D& minPt, const Point2D& maxPt, double resolution)
       : width(0), height(0), origin(minPt), resolution(resolution) {
     origin.x = std::min(origin.x, minPt.x);
     origin.y = std::min(origin.y, minPt.y);

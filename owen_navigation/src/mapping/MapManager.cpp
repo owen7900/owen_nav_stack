@@ -15,7 +15,7 @@ constexpr double DefaultMapSize = 10.0;
 
 MapManager::MapManager(rclcpp::Node& node) {
   auto obstacleSourcesStrings = node.get_parameter_or(
-      "obstacle_sources", std::vector<std::string>{"static_map"});
+      "obstacle_sources", std::vector<std::string>{"static_map", "lidar"});
 
   const double mapSize =
       node.get_parameter_or("map_size", Constants::DefaultMapSize);

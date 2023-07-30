@@ -4,7 +4,7 @@
 #include <owen_common/Pose2D.hpp>
 #include <rclcpp/node.hpp>
 
-#include "owen_navigation/mapping/Map.hpp"
+#include "owen_navigation/mapping/GridMap.hpp"
 
 namespace Navigation::Mapping {
 namespace ObstacleSources {
@@ -13,7 +13,7 @@ class BaseObstacleSource;
 
 class MapManager {
  public:
-  using MapT = Map<uint8_t>;
+  using MapT = GridMap<uint8_t>;
   explicit MapManager(rclcpp::Node& node);
 
   const MapT& GetMap() const { return map; }
