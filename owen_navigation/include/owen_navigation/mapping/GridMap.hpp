@@ -1,25 +1,31 @@
 #pragma once
 #include <cmath>
+#include <iostream>
 #include <vector>
 
+#include "owen_common/Line2D.hpp"
 #include "owen_common/Point2D.hpp"
 #include "owen_common/Rectangle.hpp"
 namespace Navigation::Mapping {
 
-template <typename T>
+template <typename T, T Free = std::numeric_limits<T>::min(),
+          T Occupied = std::numeric_limits<T>::max(),
+          T Unknown = std::numeric_limits<T>::min()>
 class GridMap {
  public:
   using Point2D = owen_common::types::Point2D;
   using IntPoint = owen_common::types::BasePoint2D<int>;
   using Rectangle = owen_common::types::Rectangle<double>;
+  using CellVal = T;
+  const static T FreeVal = Free;
+  const static T OccupiedVal = Occupied;
+  const static T UnknownVal = Unknown;
 
   struct Cell {
     Rectangle bounds{};
     T state{};
   };
   using MapUpdate = std::vector<Cell>;
-  constexpr static T Occupied = std::numeric_limits<T>::max();
-  constexpr static T Free = std::numeric_limits<T>::min();
 
  private:
   constexpr static const double DefaultSize = 10.0;
@@ -33,7 +39,12 @@ class GridMap {
     origin.y = std::min(origin.y, minPt.y);
     Point2D newMax{std::max(minPt.x, maxPt.x), std::max(minPt.y, maxPt.y)};
     this->ResizeToPoint(newMax);
+    Clear();
   };
+
+  void Clear() { Fill(Unknown); }
+
+  void Fill(const T& val) { std::fill(map.begin(), map.end(), val); }
 
   void ResizeToPoint(const Point2D& pt) {
     if (IsInBounds(pt)) {
@@ -41,20 +52,24 @@ class GridMap {
     }
     Point2D maxPt = origin + Point2D{resolution * width, resolution * height};
     Point2D newMax{std::max(pt.x, maxPt.x), std::max(pt.y, maxPt.y)};
-    newMax = newMax + ExtraResize;
+    if (newMax != maxPt) {
+      newMax = newMax + ExtraResize;
+    }
 
     Point2D newOrigin;
     newOrigin.x = std::min(origin.x, pt.x);
     newOrigin.y = std::min(origin.y, pt.y);
-    newOrigin = newOrigin - ExtraResize;
+    if (newOrigin != origin) {
+      newOrigin = newOrigin - ExtraResize;
+    }
 
     int newWidth = (newMax.x - newOrigin.x) / resolution;
     int newHeight = (newMax.y - newOrigin.y) / resolution;
 
-    std::vector<T> newMap(newWidth * newHeight, false);
+    std::vector<T> newMap(newWidth * newHeight, Unknown);
     if (!map.empty()) {
-      const int heightOffset = height - newHeight;
-      const int widthOffset = width - newWidth;
+      const int widthOffset = (origin.x - newOrigin.x) / resolution;
+      const int heightOffset = (origin.y - newOrigin.y) / resolution;
       int idx = 0;
       for (int y = 0; y < newHeight; ++y) {
         for (int x = 0; x < newWidth; ++x) {
@@ -75,17 +90,39 @@ class GridMap {
     width = newWidth;
   };
 
-  inline bool IsOccupied(const Point2D& pt) const {
-    return IsInBounds(pt) ? map.at(GetIdx(pt)) != Free : false;
+  [[nodiscard]] inline bool IsOccupied(const Point2D& pt) const {
+    if (!IsInBounds(pt)) {
+      return false;
+    }
+    const T d = map.at(GetIdx(pt));
+    return d != Free && d != Unknown;
   };
-  inline bool IsOccupied(const IntPoint& pt) const {
-    return IsInBounds(pt) ? map.at(GetIdx(pt)) != Free : false;
+  [[nodiscard]] inline bool IsOccupied(const IntPoint& pt) const {
+    if (!IsInBounds(pt)) {
+      return false;
+    }
+    const T d = map.at(GetIdx(pt));
+    return d != Free && d != Unknown;
   };
-  inline bool IsOccupied(size_t idx) const {
-    return IsInBounds(idx) ? map.at(idx) != Free : false;
+  [[nodiscard]] inline bool IsOccupied(size_t idx) const {
+    if (!IsInBounds(idx)) {
+      return false;
+    }
+    const T d = map.at(idx);
+    return d != Free && d != Unknown;
   };
 
-  double GetClosestObstacleDistance(
+  [[nodiscard]] inline bool IsFree(const Point2D& pt) const {
+    return IsInBounds(pt) ? map.at(GetIdx(pt)) == Free : false;
+  };
+  [[nodiscard]] inline bool IsFree(const IntPoint& pt) const {
+    return IsInBounds(pt) ? map.at(GetIdx(pt)) == Free : false;
+  };
+  [[nodiscard]] inline bool IsFree(size_t idx) const {
+    return IsInBounds(idx) ? map.at(idx) == Free : false;
+  };
+
+  [[nodiscard]] double GetClosestObstacleDistance(
       const Point2D& pt,
       double searchRadius = std::numeric_limits<double>::max()) const {
     const int searchRadiusX =
@@ -123,7 +160,7 @@ class GridMap {
     return std::sqrt(ret) * resolution;
   };
 
-  bool IsSafe(const Point2D& pt, double vehicleRadius = 0) const {
+  [[nodiscard]] bool IsSafe(const Point2D& pt, double vehicleRadius = 0) const {
     const auto searchRadius =
         static_cast<int>(std::abs(vehicleRadius / resolution)) + 1;
     const auto startPt = GetCellCoords(pt);
@@ -139,88 +176,120 @@ class GridMap {
 
     return true;
   };
-  bool IsSafePath(const Point2D& pt, const Point2D& pt2,
-                  double vehicleRadius = 0) const {
-    const int obsRadius = std::ceil(
-        (vehicleRadius != 0 ? vehicleRadius : resolution) / resolution);
 
-    const auto ipt1 = GetCellCoords(pt);
-    const auto ipt2 = GetCellCoords(pt2);
-    if (ipt1.y == ipt2.y) {
-      const int minX = std::min(ipt1.x, ipt2.x) - obsRadius;
-      const int maxX = std::max(ipt1.x, ipt2.x) + obsRadius;
-      for (int y = ipt1.y - obsRadius; y < ipt1.y + obsRadius; ++y) {
-        for (int x = minX; x <= maxX; ++x) {
-          IntPoint ipt{x, y};
-          if (IsOccupied(ipt)) {
-            return false;
-          }
-        }
-      }
-      return true;
-    }
+  [[nodiscard]] bool IsSafe(const IntPoint& pt,
+                            double vehicleRadius = 0) const {
+    const auto searchRadius =
+        static_cast<int>(std::abs(vehicleRadius / resolution)) + 1;
 
-    int minY = 0;
-    int maxY = height;
-    int minX = 0;
-    int maxX = 0;
-    double slope = 0;
-    if (ipt1.y < ipt2.y) {
-      minY = std::max(0, ipt1.y - obsRadius);
-      maxY = std::min(height, ipt2.y + obsRadius);
-      minX = ipt1.x - obsRadius;
-      maxX = ipt1.x + obsRadius;
-      slope = (static_cast<double>(ipt1.x) - static_cast<double>(ipt2.x)) /
-              (static_cast<double>(ipt1.y) - static_cast<double>(ipt2.y));
-    } else {
-      minY = std::max(0, ipt2.y - obsRadius);
-      maxY = std::min(height, ipt1.y + obsRadius);
-      minX = ipt2.x - obsRadius;
-      maxX = ipt2.x + obsRadius;
-      slope = (static_cast<double>(ipt2.x) - static_cast<double>(ipt1.x)) /
-              (static_cast<double>(ipt2.y) - static_cast<double>(ipt1.y));
-    }
-
-    for (int y = minY; y <= maxY;
-         ++y, minX = std::floor(minX + slope), maxX = std::ceil(maxX + slope)) {
-      for (int x = minX; x <= maxX; ++x) {
-        const IntPoint ipt{x, y};
-        if (IsOccupied(ipt)) {
+    for (int y = pt.y - searchRadius; y < pt.y + searchRadius; ++y) {
+      for (int x = pt.x - searchRadius; x < pt.x + searchRadius; ++x) {
+        if (IsOccupied(IntPoint{x, y})) {
           return false;
         }
       }
     }
 
     return true;
+  }
+
+  [[nodiscard]] bool IsSafePath(const Point2D& pt, const Point2D& pt2,
+                                double vehicleRadius = 0) const {
+    owen_common::types::BaseLine2D<double> line{pt, pt2};
+    Point2D p = pt;
+    double distance = 0;
+    while (p.distanceFromPoint(pt2) > (resolution * 2)) {
+      if (!IsSafe(p, vehicleRadius)) {
+        return false;
+      }
+      distance += resolution;
+      p = line.ProjectFromP1(distance);
+    }
+    return IsSafe(pt2, vehicleRadius);
+
+    // const int obsRadius = std::ceil(
+    //     (vehicleRadius != 0 ? vehicleRadius : resolution) / resolution);
+    //
+    // const auto ipt1 = GetCellCoords(pt);
+    // const auto ipt2 = GetCellCoords(pt2);
+    // if (ipt1.y == ipt2.y) {
+    //   const int minX = std::min(ipt1.x, ipt2.x) - obsRadius;
+    //   const int maxX = std::max(ipt1.x, ipt2.x) + obsRadius;
+    //   for (int y = ipt1.y - obsRadius; y < ipt1.y + obsRadius; ++y) {
+    //     for (int x = minX; x <= maxX; ++x) {
+    //       IntPoint ipt{x, y};
+    //       if (IsOccupied(ipt)) {
+    //         return false;
+    //       }
+    //     }
+    //   }
+    //   return true;
+    // }
+    //
+    // int minY = 0;
+    // int maxY = 0;
+    // int minX = 0;
+    // int maxX = 0;
+    // double slope = 0;
+    // if (ipt1.y < ipt2.y) {
+    //   minY = std::max(0, ipt1.y - obsRadius);
+    //   maxY = std::min(height, ipt2.y + obsRadius);
+    //   minX = ipt1.x - obsRadius;
+    //   maxX = ipt1.x + obsRadius;
+    //   slope = (static_cast<double>(ipt1.x) - static_cast<double>(ipt2.x)) /
+    //           (static_cast<double>(ipt1.y) - static_cast<double>(ipt2.y));
+    // } else {
+    //   minY = std::max(0, ipt2.y - obsRadius);
+    //   maxY = std::min(height, ipt1.y + obsRadius);
+    //   minX = ipt2.x - obsRadius;
+    //   maxX = ipt2.x + obsRadius;
+    //   slope = (static_cast<double>(ipt2.x) - static_cast<double>(ipt1.x)) /
+    //           (static_cast<double>(ipt2.y) - static_cast<double>(ipt1.y));
+    // }
+    //
+    // for (int y = minY; y <= maxY;
+    //      ++y, minX = std::floor(minX + slope), maxX = std::ceil(maxX +
+    //      slope)) {
+    //   for (int x = minX; x <= maxX; ++x) {
+    //     const IntPoint ipt{x, y};
+    //     if (IsOccupied(ipt)) {
+    //       return false;
+    //     }
+    //   }
+    // }
+    //
+    // return true;
   };
 
-  inline bool IsInBounds(const Point2D& pt) const {
+  [[nodiscard]] inline bool IsInBounds(const Point2D& pt) const {
     return IsInBounds(GetCellCoords(pt));
   };
-  inline bool IsInBounds(const IntPoint& pt) const {
+  [[nodiscard]] inline bool IsInBounds(const IntPoint& pt) const {
     return pt.x < width && pt.y < height && pt.x >= 0 && pt.y >= 0;
   };
-  inline bool IsInBounds(int idx) const {
+  [[nodiscard]] inline bool IsInBounds(int idx) const {
     return idx < map.size() && idx >= 0;
   };
 
-  inline int GetIdx(const Point2D& pt) const {
+  [[nodiscard]] inline int GetIdx(const Point2D& pt) const {
     return GetIdx(GetCellCoords(pt));
   };
-  inline int GetIdx(const IntPoint& pt) const { return pt.x + width * pt.y; };
+  [[nodiscard]] inline int GetIdx(const IntPoint& pt) const {
+    return pt.x + width * pt.y;
+  };
 
-  IntPoint GetCellCoords(const Point2D& pt) const {
+  [[nodiscard]] IntPoint GetCellCoords(const Point2D& pt) const {
     const auto tmpPt = (pt - origin) / resolution;
     return {static_cast<int>(tmpPt.x), static_cast<int>(tmpPt.y)};
   };
-  inline IntPoint GetCellCoords(int idx) const {
+  [[nodiscard]] inline IntPoint GetCellCoords(int idx) const {
     return {idx % width, idx / width};
   };
 
-  inline Point2D GetPoint(const IntPoint& pt) const {
+  [[nodiscard]] inline Point2D GetPoint(const IntPoint& pt) const {
     return origin + Point2D{pt.x * resolution, pt.y * resolution};
   };
-  inline Point2D GetPoint(int idx) const {
+  [[nodiscard]] inline Point2D GetPoint(int idx) const {
     return GetPoint(GetCellCoords(idx));
   };
 
@@ -236,9 +305,11 @@ class GridMap {
     }
 
     if (!IsInBounds(minPt)) {
+      std::cout << "resizing from update: " << minPt << "\n";
       this->ResizeToPoint(minPt);
     }
     if (!IsInBounds(maxPt)) {
+      std::cout << "Resizeing fromupdaet: " << maxPt << "\n";
       this->ResizeToPoint(maxPt);
     }
 
@@ -264,16 +335,17 @@ class GridMap {
     }
   };
 
-  size_t GetWidth() const { return width; };
-  size_t GetHeight() const { return height; };
+  [[nodiscard]] size_t GetWidth() const { return width; };
+  [[nodiscard]] size_t GetHeight() const { return height; };
 
-  Point2D GetOrigin() const { return origin; };
-  double GetResolution() const { return resolution; };
+  [[nodiscard]] Point2D GetOrigin() const { return origin; };
+  [[nodiscard]] double GetResolution() const { return resolution; };
 
   const std::vector<T>& GetData() const { return map; };
 
-  Point2D GetMaxPoint() const {
-    return origin + Point2D{width * resolution, height * resolution};
+  [[nodiscard]] Point2D GetMaxPoint() const {
+    return origin +
+           Point2D{(width - 1) * resolution, (height - 1) * resolution};
   };
 
   void SetCell(int idx, T state) {

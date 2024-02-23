@@ -33,7 +33,7 @@ NavigatorNode::NavigatorNode(const std::string& name)
   }
 
   const auto pathGeneratorsStrings = this->get_parameter_or(
-      "path_generators", std::vector<std::string>{"AStar"});
+      "path_generators", std::vector<std::string>{"astar", "vacuum"});
 
   for (const auto& generatorString : pathGeneratorsStrings) {
     auto gen = GetPathGenerator(*this, generatorString, map);
@@ -121,7 +121,7 @@ void NavigatorNode::controlLoop() {
   }
 
   if (!this->activeGenerator) {
-    RCLCPP_INFO_STREAM(this->get_logger(), "No active path generator");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "No active path generator");
     this->commandPub->publish(geometry_msgs::msg::Twist{});
   } else if (this->pose.GetDataAge() > dataTimeout) {
     RCLCPP_WARN_STREAM(this->get_logger(), "Have outdated pose, is "

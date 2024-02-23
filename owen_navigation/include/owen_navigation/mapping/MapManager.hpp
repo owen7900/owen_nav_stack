@@ -13,7 +13,7 @@ class BaseObstacleSource;
 
 class MapManager {
  public:
-  using MapT = GridMap<uint8_t>;
+  using MapT = GridMap<uint8_t, 0, 100, 255>;
   explicit MapManager(rclcpp::Node& node);
 
   const MapT& GetMap() const { return map; }

@@ -104,14 +104,15 @@ std::optional<BasePathFollower::Command> PurePursuit::CalculateCommand(
   this->pose = pose;
   BasePathFollower::Command ret;
   this->isArrived = false;
-  if (this->path.PeekData().empty()) {
+  if (this->path.PeekDataRef().empty()) {
     RCLCPP_ERROR(rclcpp::get_logger(Constants::Name),
                  "The path provided to the controller was empty.");
     return {};
   }
 
-  const size_t targetIdx = this->getTargetIdx();
-  const auto targetPoint = this->path.PeekData()[targetIdx];
+  const auto targetPoint = this->getTargetPoint();
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("pure_pursuit"),
+                     "CurrPt: " << pose << " targetPoint: " << targetPoint);
   const double deltaX = targetPoint.x - this->pose.x;
   const double deltaY = targetPoint.y - this->pose.y;
   const double targetHeading = std::atan2(deltaY, deltaX);
@@ -132,11 +133,11 @@ std::optional<BasePathFollower::Command> PurePursuit::CalculateCommand(
                                                << params.successRadius);
     return {ret};
   }
-  if (deltaDist > params.lookaheadDistance + 1.0) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(Constants::Name),
-                        "Lookingahead too far");
-    return ret;
-  }
+  // if (deltaDist > params.lookaheadDistance + 1.0) {
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger(Constants::Name),
+  //                       "Lookingahead too far");
+  //   return ret;
+  // }
 
   const double turnCommand = deltaHeading * params.turnGain;
   double forwardCommand = 0.0;
@@ -161,26 +162,29 @@ std::optional<BasePathFollower::Command> PurePursuit::CalculateCommand(
   return ret;
 }
 
-size_t PurePursuit::getTargetIdx() const {
-  const size_t pathLen = this->path.PeekData().size();
+owen_common::types::Point2D PurePursuit::getTargetPoint() const {
+  const size_t pathLen = this->path.PeekDataRef().size();
   const size_t roverIdx = this->getClosestPointAlongPath();
   double dist = 0;
-  for (size_t i = roverIdx + 1; i < pathLen; ++i) {
-    dist += this->path.PeekData()[i - 1].distanceFromPoint(
-        this->path.PeekData()[i]);
-    if (dist >= params.lookaheadDistance) {
-      return i - 1;
+  for (size_t i = roverIdx + 2; i < pathLen; ++i) {
+    const owen_common::types::BaseLine2D<double> lastLineSegment{
+        this->path.PeekDataRef()[i - 1], this->path.PeekDataRef()[i]};
+    const double lastSegmentDistance = lastLineSegment.GetLength();
+    if (dist + lastSegmentDistance >= params.lookaheadDistance) {
+      double projectionDistance = params.lookaheadDistance - dist;
+      return lastLineSegment.ProjectFromP1(projectionDistance);
     }
+    dist += lastSegmentDistance;
   }
-  return pathLen - 1;
+  return this->path.PeekDataRef().back();
 }
 
 size_t PurePursuit::getClosestPointAlongPath() const {
-  const size_t pathLen = this->path.PeekData().size();
+  const size_t pathLen = this->path.PeekDataRef().size();
   double minDist = std::numeric_limits<double>::max();
   size_t minIdx = 0;
   for (size_t i = 0; i < pathLen; ++i) {
-    const double dist = this->path.PeekData()[i].distanceFromPoint(
+    const double dist = this->path.PeekDataRef()[i].distanceFromPoint(
         {this->pose.x, this->pose.y});
     if (dist < minDist) {
       minIdx = i;

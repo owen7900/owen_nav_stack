@@ -21,8 +21,11 @@ class BasePathFollower {
       : map(std::move(map_)){};
   virtual ~BasePathFollower() = default;
 
-  void UpdatePath(const Path& p) { path.SetData(p); }
-  void UpdatePath(Path&& p) { path.SetData(p); }
+  void UpdatePath(const Path& p) {
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("base_path_follower"),
+                       "Got path of size: " << p.size());
+    path.SetData(p);
+  }
   bool IsArrived() const { return isArrived; }
 
   virtual std::optional<Command> CalculateCommand(

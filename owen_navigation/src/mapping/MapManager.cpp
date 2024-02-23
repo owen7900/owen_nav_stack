@@ -68,7 +68,7 @@ nav_msgs::msg::OccupancyGrid MapManager::generateNavMap() const {
 
   g.data.resize(map.GetData().size());
   std::transform(map.GetData().begin(), map.GetData().end(), g.data.begin(),
-                 [](const bool& m) { return m ? 100 : 0; });
+                 [](const MapManager::MapT::CellVal& m) { return m; });
 
   return g;
 }

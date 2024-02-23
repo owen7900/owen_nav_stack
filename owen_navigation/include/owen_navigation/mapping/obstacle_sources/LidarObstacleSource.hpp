@@ -22,6 +22,7 @@ class LidarObstacleSource : public BaseObstacleSource {
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub;
   bool canClear;
   double raytraceResolution;
+  double maxRange;
   double clearingRadius;
 };
 }  // namespace Navigation::Mapping::ObstacleSources

@@ -15,6 +15,7 @@ LidarObstacleSource::LidarObstacleSource(rclcpp::Node& n)
 
   canClear = n.get_parameter_or("lidar_map_clearing", true);
   raytraceResolution = n.get_parameter_or("lidar_map_raytrace_resolution", 0.1);
+  maxRange = n.get_parameter_or("lidar_map_max_range", 5);
   clearingRadius =
       n.get_parameter_or("lidar_map_clearing_radius", raytraceResolution / 2.0);
 }
@@ -33,26 +34,31 @@ MapManager::MapT::MapUpdate LidarObstacleSource::GetMapUpdate(
   const Point2D clearing{clearingRadius, clearingRadius};
 
   for (size_t i = 0; i < numRanges; ++i, angle += deltaAngle) {
+    const double range = std::min<double>(maxRange, s->ranges[i]);
+    if (range <= 0) {
+      continue;
+    }
     const double sinA = std::sin(angle);
     const double cosA = std::cos(angle);
-    const double range = s->ranges[i];
-    const auto pt = centerPt + Point2D{range * sinA, range * cosA};
+    const auto pt = centerPt + Point2D{range * cosA, range * sinA};
 
     if (canClear) {
       const double maxClearingRange = range - clearingRadius;
       for (double r = 0; r < maxClearingRange; r += raytraceResolution) {
         MapManager::MapT::Cell c;
-        c.state = MapManager::MapT::Free;
-        const auto center = centerPt + Point2D{r * sinA, r * cosA};
+        c.state = MapManager::MapT::FreeVal;
+        const auto center = centerPt + Point2D{r * cosA, r * sinA};
         c.bounds = {{center + clearing}, {center - clearing}};
         ret.push_back(c);
       }
     }
 
-    MapManager::MapT::Cell c;
-    c.state = MapManager::MapT::Occupied;
-    c.bounds = MapManager::MapT::Rectangle{pt, pt};
-    ret.push_back(c);
+    if (s->ranges[i] < maxRange) {
+      MapManager::MapT::Cell c;
+      c.state = MapManager::MapT::OccupiedVal;
+      c.bounds = MapManager::MapT::Rectangle{pt, pt};
+      ret.push_back(c);
+    }
   }
   return ret;
 }

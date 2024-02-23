@@ -23,7 +23,7 @@ std::vector<owen_common::types::Point2D> RRTNavigator::GeneratePath(
   map->GetMapRef().ResizeToPoint({pose.x, pose.y});
   map->GetMapRef().ResizeToPoint(destination.PeekData());
   if (!map->GetMap().IsSafe(destination.PeekData(), params.vehicleRadius) ||
-      !map->GetMap().IsSafe({pose.x, pose.y})) {
+      !map->GetMap().IsSafe(Point2D{pose.x, pose.y}, params.vehicleRadius)) {
     RCLCPP_ERROR(rclcpp::get_logger("rrt"), "Destination or start is not safe");
     return {};
   }
@@ -60,17 +60,16 @@ std::vector<owen_common::types::Point2D> RRTNavigator::GeneratePath(
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("rrt"),
                      "Explored: " << nodes.size() << "nodes");
-  std::vector<owen_common::types::Point2D> ret;
-  ret.push_back(destination.PeekData());
+  path.push_back(destination.PeekData());
   Node n = nodes[closestPt];
-  ret.push_back(n.point);
+  path.push_back(n.point);
   while (n != first) {
     n = nodes.at(n.parent);
-    ret.push_back(n.point);
+    path.push_back(n.point);
   }
 
-  std::reverse(ret.begin(), ret.end());
-  return ret;
+  std::reverse(path.begin(), path.end());
+  return path;
 }
 
 owen_common::types::Point2D RRTNavigator::randomlySamplePoint() {

@@ -46,6 +46,7 @@ set(cpp_files
   src/RecoveryBehaviourFactory.cpp
   src/BackUpBehaviour.cpp
   src/RRTNavigator.cpp
+  src/CoveragePathGenerator.cpp
   )
 
 add_library(${PROJECT_NAME} ${cpp_files})
@@ -88,14 +89,30 @@ target_include_directories(planner_tester PUBLIC
 target_compile_features(planner_tester PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_link_libraries(planner_tester ${PROJECT_NAME})
 
-
 ament_target_dependencies(
   planner_tester
   ${dependencies}
   OpenCV
 )
 
-install(TARGETS planner_tester
+add_executable(gen_tester
+  testing_utilities/CoveragePlanner.cpp
+  ${cpp_files}
+  )
+
+target_include_directories(gen_tester PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(gen_tester PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries(gen_tester ${PROJECT_NAME})
+
+ament_target_dependencies(
+  gen_tester
+  ${dependencies}
+  OpenCV
+)
+
+install(TARGETS planner_tester gen_tester
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

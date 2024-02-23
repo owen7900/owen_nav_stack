@@ -4,6 +4,8 @@
 namespace Navigation::PathFollowers {
 
 class PurePursuit : public BasePathFollower {
+  using Point2D = owen_common::types::Point2D;
+
  public:
   explicit PurePursuit(rclcpp::Node& n,
                        const std::shared_ptr<Mapping::MapManager>& map);
@@ -12,8 +14,8 @@ class PurePursuit : public BasePathFollower {
       const owen_common::types::Pose2D& pose) override;
 
  private:
-  size_t getTargetIdx() const;
-  size_t getClosestPointAlongPath() const;
+  [[nodiscard]] Point2D getTargetPoint() const;
+  [[nodiscard]] size_t getClosestPointAlongPath() const;
 
   rcl_interfaces::msg::SetParametersResult updateParams(
       const std::vector<rclcpp::Parameter>& params);
