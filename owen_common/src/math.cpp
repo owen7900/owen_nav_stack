@@ -2,7 +2,7 @@
 // Created by kevin on 11/30/22.
 //
 
-#include "../include/owen_common/math.hpp"
+#include "owen_common/math.hpp"
 #include <eigen3/Eigen/Dense>
 
 using Line2 = Eigen::Hyperplane<double,2>;

@@ -90,6 +90,35 @@ class GridMap {
     width = newWidth;
   };
 
+  T& operator[](const Point2D& pt) {
+    if (!IsInBounds(pt)) {throw -1;}
+    return map[GetIdx(pt)];
+  }
+
+  T& operator[](const IntPoint& pt) {
+    if (!IsInBounds(pt)) {throw -1;}
+    return map[GetIdx(pt)];
+  }
+
+  T& operator[](const int pt) {
+    return map[pt];
+  }
+
+  T operator[](const Point2D& pt) const {
+    if (!IsInBounds(pt)) {return {};}
+    return map[GetIdx(pt)];
+  }
+
+  T operator[](const IntPoint& pt) const {
+    if (!IsInBounds(pt)) {return {};}
+    return map[GetIdx(pt)];
+  }
+
+  T operator[](const int pt) const {
+    if (!IsInBounds(pt)) {return {};}
+    return map[pt];
+  }
+
   [[nodiscard]] inline bool IsOccupied(const Point2D& pt) const {
     if (!IsInBounds(pt)) {
       return false;
@@ -342,6 +371,8 @@ class GridMap {
   [[nodiscard]] double GetResolution() const { return resolution; };
 
   const std::vector<T>& GetData() const { return map; };
+  std::vector<T>& GetData() { return map; }; // This is a dangerous function
+
 
   [[nodiscard]] Point2D GetMaxPoint() const {
     return origin +

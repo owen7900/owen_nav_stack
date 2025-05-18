@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
   const auto params = parseParams(rclcpp::remove_ros_arguments(argc, argv));
   rclcpp::Node n("planner_tester");
   n.declare_parameter("planning_resolution", 1.0);
-  n.declare_parameter("max_planning_time", 1.0);
+  n.declare_parameter("max_planning_time", 0.2);
   auto map = std::make_shared<Navigation::Mapping::MapManager>(n);
   Navigation::PathGenerators::PlannerTester<
       Navigation::PathGenerators::RRTNavigator>
@@ -196,12 +196,13 @@ int main(int argc, char* argv[]) {
       std::chrono::system_clock::now() - aT;
 
   std::cout << "AStar: " << aD.count() << " RRT: " << rrtD.count() << std::endl;
-  printPath(aPath);
+  // printPath(aPath);
 
   auto m = getImage(map);
   drawPath(m, rrtPath, map, {0, 255, 0});
   drawPath(m, aPath, map, {255, 0, 0});
   drawPt(m, {100, 100}, map, {0, 255, 255});
+  cv::namedWindow("MAP", cv::WINDOW_NORMAL);
   cv::imshow("MAP", m);
   while (cv::waitKey(0) != 'q') {
     ;

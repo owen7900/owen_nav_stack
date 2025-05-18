@@ -40,7 +40,7 @@ std::vector<owen_common::types::Point2D> RRTNavigator::GeneratePath(
   size_t closestPt = 0;
   double minCost = std::numeric_limits<double>::max();
 
-  while (rclcpp::ok()) {
+  while (rclcpp::ok() && std::chrono::system_clock::now() - startTime < params.maxPlanningTime) {
     const auto pt = randomlySamplePoint();
 
     const double cost =
@@ -56,6 +56,9 @@ std::vector<owen_common::types::Point2D> RRTNavigator::GeneratePath(
         (!rrtParams.doOptimize && foundPath)) {
       break;
     }
+  }
+  if (!foundPath && std::chrono::system_clock::now() - startTime >= params.maxPlanningTime) {
+    RCLCPP_WARN(rclcpp::get_logger("rrt"), "Ran out of planning time");
   }
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("rrt"),
@@ -130,7 +133,7 @@ owen_common::types::Point2D RRTNavigator::randomlySamplePoint() {
   return ret;
 }
 
-bool RRTNavigator::HasUpdatedPath() const { return false; }
+bool RRTNavigator::HasUpdatedPath(const owen_common::types::Pose2D&) { return false; }
 
 void RRTNavigator::addNode(const owen_common::types::Point2D& pt, size_t parent,
                            double cost) {

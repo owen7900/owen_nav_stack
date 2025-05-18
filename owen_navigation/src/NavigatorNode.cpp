@@ -112,7 +112,8 @@ void NavigatorNode::controlLoop() {
     }
   }
 
-  if (this->activeGenerator && this->activeGenerator->HasUpdatedPath()) {
+  if (this->activeGenerator &&
+      this->activeGenerator->HasUpdatedPath(pose.GetDataRef())) {
     this->pathFollower->UpdatePath(
         this->activeGenerator->GeneratePath(pose.GetDataRef()));
     RCLCPP_INFO_STREAM(
@@ -135,7 +136,9 @@ void NavigatorNode::controlLoop() {
                                                  << command->linear.x << " "
                                                  << command->angular.z);
       this->commandPub->publish(command.value());
-      if (this->pathFollower->IsArrived()) {
+      if (this->pathFollower->IsArrived() &&
+          (!activeGenerator ||
+           activeGenerator->IsPathComplete(pose.GetDataRef()))) {
         activeGenerator = nullptr;
       }
     } else {

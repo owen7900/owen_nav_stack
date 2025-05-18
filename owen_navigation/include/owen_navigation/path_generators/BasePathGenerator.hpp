@@ -29,7 +29,9 @@ class BasePathGenerator {
   // for the new command
   virtual bool HasNewCommand() = 0;
 
-  [[nodiscard]] virtual bool HasUpdatedPath() const = 0;
+  [[nodiscard]] virtual bool HasUpdatedPath(const owen_common::types::Pose2D& pose) = 0;
+
+  virtual bool IsPathComplete(const owen_common::types::Pose2D& pose) const {return true;}
 
   void UpdatePose(const owen_common::types::Pose2D& pose_) { pose = pose_; };
 

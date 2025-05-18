@@ -46,6 +46,7 @@ def generate_launch_description():
         package='rplidar_ros',
         executable='rplidar_composition',
         name='lidar_node',
+        condition=IfCondition(PythonExpression(['not ' , simulation])),
         #output='screen',
         parameters=[{
             'serial_port' : '/dev/lidar',
@@ -84,9 +85,6 @@ def generate_launch_description():
         package='system_controller',
         executable='system_controller_node',
         name='system_controller_node',
-        remappings=[('/roomba/cmd_vel', 
-                     PythonExpression(['\'/diff_drive_base_controller/cmd_vel_unstamped\' if ', simulation, 
-                                       ' else \'/roomba/cmd_vel\' ']))]
         #output='screen'
     )
 
@@ -102,7 +100,7 @@ def generate_launch_description():
         navigation_launch,
         localization_launch,
         lidar_node,
-        # custom_nav
+        custom_nav
         ])
 
     return ld;

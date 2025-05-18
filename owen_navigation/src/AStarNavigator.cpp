@@ -42,6 +42,6 @@ std::vector<owen_common::types::Point2D> AStarNavigator::GeneratePath(
   return path;
 }
 
-bool AStarNavigator::HasUpdatedPath() const { return false; }
+bool AStarNavigator::HasUpdatedPath(const owen_common::types::Pose2D&) { return false; }
 
 }  // namespace Navigation::PathGenerators

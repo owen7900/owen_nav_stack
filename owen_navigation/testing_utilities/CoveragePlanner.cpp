@@ -1,11 +1,15 @@
 
 #include <chrono>
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/utilities.hpp>
 
+#include "owen_common/Line2D.hpp"
+#include "owen_common/Pose2D.hpp"
+#include "owen_common/owen_common.hpp"
 #include "owen_navigation/mapping/obstacle_sources/ObstacleSourceFactory.hpp"
 #include "owen_navigation/path_generators/CoveragePathGenerator.hpp"
 using Point2D = owen_common::types::Point2D;
@@ -58,14 +62,14 @@ void drawPt(cv::Mat& mat, const Point2D& point,
 void addRandomObstacles(
     const std::shared_ptr<Navigation::Mapping::MapManager>& map) {
   auto& mapRef = map->GetMapRef();
-  mapRef.ResizeToPoint({100, 100});
+  mapRef.ResizeToPoint({10, 10});
   mapRef.Fill(Navigation::Mapping::MapManager::MapT::FreeVal);
   std::vector<Navigation::Mapping::MapManager::MapT::Cell> updates;
 
   std::cout << "Min: " << mapRef.GetOrigin() << " max: " << mapRef.GetMaxPoint()
             << "\n";
 
-  size_t numObs = rand() % 400;
+  size_t numObs = rand() % 40;
   for (size_t i = 0; i < numObs; ++i) {
     Navigation::Mapping::MapManager::MapT::Cell c;
     c.state = Navigation::Mapping::MapManager::MapT::OccupiedVal;
@@ -134,6 +138,7 @@ Params parseParams(const std::vector<std::string>& args) {
 
   return p;
 }
+
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   const auto params = parseParams(rclcpp::remove_ros_arguments(argc, argv));
@@ -151,7 +156,27 @@ int main(int argc, char* argv[]) {
   CoveragePathGenerator gen(n, map);
 
   const auto time = std::chrono::system_clock::now();
-  const auto path = gen.GeneratePath({0, 0, 0});
+
+  std::vector<owen_common::types::Point2D> path;
+  auto pathSeg = gen.GeneratePath({0, 0, 0});
+  path.push_back({0, 0});
+  if (!pathSeg.empty()) {
+    owen_common::types::Pose2D pose = {pathSeg.front().x, pathSeg.front().y, 0};
+    while (!gen.IsPathComplete(pose) && rclcpp::ok()) {
+      pathSeg = gen.GeneratePath(pose);
+      if (pathSeg.size() <= 1) {
+        break;
+      }
+      for (int i = 1; i < pathSeg.size(); ++i) {
+        const auto& p = pathSeg[i];
+        path.push_back(p);
+        pose = Pose2D{p.x, p.y, 0};
+        if (gen.HasUpdatedPath(pose)) {
+          break;
+        }
+      }
+    }
+  }
   const std::chrono::duration<double> dur =
       std::chrono::system_clock::now() - time;
 
@@ -161,6 +186,7 @@ int main(int argc, char* argv[]) {
   auto m = getImage(map);
   drawPath(m, path, map, {0, 255, 0});
   drawPt(m, {0.0, 0.}, map, {255, 0, 0});
+  cv::namedWindow("MAP", cv::WINDOW_NORMAL);
   cv::imshow("MAP", m);
   while (cv::waitKey(0) != 'q' && rclcpp::ok()) {
     ;

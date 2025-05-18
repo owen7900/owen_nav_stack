@@ -6,6 +6,12 @@ namespace Navigation::PathGenerators {
 
 class CoveragePathGenerator : public BasePathGenerator {
   using IntPoint = owen_common::types::BasePoint2D<int>;
+  enum class CellState {
+    Clean,
+    Dirty,
+    Planned
+  };
+  using MapT = Mapping::GridMap<CellState, CellState::Dirty, CellState::Clean, CellState::Planned>;
 
  public:
   explicit CoveragePathGenerator(rclcpp::Node& n,
@@ -14,10 +20,11 @@ class CoveragePathGenerator : public BasePathGenerator {
       const owen_common::types::Pose2D& pose) override;
 
   bool HasNewCommand() override;
-  [[nodiscard]] bool HasUpdatedPath() const override;
+  [[nodiscard]] bool HasUpdatedPath(const owen_common::types::Pose2D& pose) override;
+  bool IsPathComplete(const owen_common::types::Pose2D& pose) const override;
 
  private:
-  void updateCoverageMap(const IntPoint& pt);
+  void updateCoverageMap(const IntPoint& pt, CellState state);
   [[nodiscard]] std::optional<IntPoint> getNextBestMove(
       const IntPoint& pt) const;
   [[nodiscard]] size_t getNumCoveredForMove(const IntPoint& pt) const;
@@ -28,10 +35,16 @@ class CoveragePathGenerator : public BasePathGenerator {
       const IntPoint& currPt, const IntPoint& offset,
       std::vector<IntPoint>& path) const;
 
+  nav_msgs::msg::OccupancyGrid::UniquePtr getOccupancyGridMsg() const;
+
  private:
   rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr startCommandSub_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occupancyGridPub_;
+  rclcpp::TimerBase::SharedPtr mapPubTimer_;
   bool hasNewCommand_;
-  std::vector<bool> coverageMap;
+  MapT coverageMap_;
+
+  IntPoint lastEndPt_;
 };
 
 }  // namespace Navigation::PathGenerators

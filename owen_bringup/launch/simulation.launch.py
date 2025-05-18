@@ -20,6 +20,8 @@ def generate_launch_description():
       get_package_share_directory('create_description'),
       urdf_file_name)
 
+  control_file = os.path.join(get_package_share_directory('create_description'), "config/diff_driver_controller_velocity.yaml")
+
   world = os.path.join(get_package_share_directory('owen_bringup'), 'worlds', 'empty_lidar.sdf')
 
   create_desc = get_package_share_directory('create_description')
@@ -36,22 +38,24 @@ def generate_launch_description():
                     '-z', '1',
                     '-allow_renaming', 'true'],
                  output='screen')
-  load_joint_state_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
-    )
+  # load_joint_state_controller = ExecuteProcess(
+  #       cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+  #            'joint_state_broadcaster'],
+  #       output='screen'
+  #   )
 
-  load_joint_trajectory_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'diff_drive_base_controller'],
-        output='screen'
-    )
+  # load_joint_trajectory_controller = ExecuteProcess(
+  #       cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+  #            'diff_drive_base_controller'],
+  #       output='screen'
+  #   )
   bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
-                   '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'],
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+                   '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+                   '/roomba/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+                   '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
         output='screen'
     )
   return LaunchDescription([
@@ -62,6 +66,10 @@ def generate_launch_description():
                 os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
             launch_arguments={'gz_args': '-r  -v 4 ' + world }.items(),
         ),
+        # Node(
+        #     package="controller_manager",
+        #     executable="ros2_control_node",
+        # ),
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -69,18 +77,18 @@ def generate_launch_description():
             output='screen',
             parameters=[params]
         ),
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=spaw_robot,
-                on_exit=[load_joint_state_controller]
-                )
-            ),
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=load_joint_state_controller,
-                on_exit=[load_joint_trajectory_controller]
-                )
-            ),
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=spaw_robot,
+        #         on_exit=[load_joint_state_controller]
+        #         )
+        #     ),
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=load_joint_state_controller,
+        #         on_exit=[load_joint_trajectory_controller]
+        #         )
+        #     ),
         spaw_robot,
         DeclareLaunchArgument(
             'use_sim_time',

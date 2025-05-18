@@ -49,7 +49,7 @@ class AStarNavigator : public BaseNavigator {
   std::vector<owen_common::types::Point2D> GeneratePath(
       const owen_common::types::Pose2D& pose) override;
 
-  bool HasUpdatedPath() const override;
+  bool HasUpdatedPath(const owen_common::types::Pose2D&) override;
 
  private:
   void exploreAroundNode(const Node& n);
